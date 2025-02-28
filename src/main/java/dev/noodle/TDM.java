@@ -300,7 +300,7 @@ public class TDM {
                     //System.out.println("Selected cell (" + selectedCol + "," + selectedRow + "): " + cellValue);
                     String result = new TextInputDialogBuilder()
                             .setTitle("Input Required")
-                            .setDescription("Please enter your name:")
+                            .setDescription("Modify Cell Value?")
                             .setInitialContent(cellValue)
                             .build()
                             .showDialog(gui);
@@ -435,8 +435,7 @@ public class TDM {
         }
     }
     private static void openFileDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, WindowBasedTextGUI gui) throws SQLException, CsvValidationException, IOException, InterruptedException {
-
-        // okay the file dialouge is not modifiable so we will see how this goes
+        //todo use the index for recent imports list
         String input = String.valueOf(new FileDialogBuilder()
                 .setTitle("Import File")
                 .setDescription("Choose a file")
@@ -453,7 +452,6 @@ public class TDM {
             //System.out.println("Selected file: " + selectedFileNames[index]);
             //System.out.println("Selected path: " + selectedFilePaths[index]);
             //updateTable(String.valueOf(selectedFileNames[index]));
- ;
 
                 try {
                     DBops.importCSV(String.valueOf(selectedFileNames[index]), String.valueOf(selectedFilePaths[index]));
@@ -473,13 +471,12 @@ public class TDM {
 
                     throw new RuntimeException(e);
                 }
-
-
         }
     }
     private static void openDirDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, WindowBasedTextGUI gui) {
         //todo ask user what they want to name the file first
         //todo also figure out how to use opencsv to save back to csv and read from db
+
         String input = String.valueOf(new DirectoryDialogBuilder()
                 .setTitle("Select directory to save in")
                 .setDescription("Choose a directory")
