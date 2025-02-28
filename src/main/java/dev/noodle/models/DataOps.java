@@ -3,9 +3,11 @@ package dev.noodle.models;
 
 
 import com.opencsv.CSVReader;
+import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import java.sql.*;
@@ -16,16 +18,18 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
+import bsh.Interpreter;
 
+import static dev.noodle.TDM.table;
 import static dev.noodle.models.CreateSQLiteDB.getJarDir;
-import static dev.noodle.models.SQLsanitize.isSQLKeyword;
 
 
-public class DBops {
+
+public class DataOps {
 
 
     public static String getDatabaseURL() {
-        //URL resource = DBops.class.getResource("/workingDb.db");
+        //URL resource = DataOps.class.getResource("/workingDb.db");
 
 //        if (resource == null) {
 //            //System.err.println("Could not find 'workingDb.sqlite' in resources folder!");
@@ -210,6 +214,31 @@ public class DBops {
                 //System.out.println("CSV imported successfully into table: " + FILENAME);
             }
             appendFileToList(FILENAME, FILEPATH);
+        }
+        public static void exportCSVtoFile(String path) throws IOException, InterruptedException, CsvValidationException, SQLException {
+            try (CSVWriter writer = new CSVWriter(new FileWriter(path))) {
+                int columnCount = table.getTableModel().getColumnCount();
+                int rowCount = table.getTableModel().getRowCount();
+
+                String[] headers = new String[columnCount];
+                for (int col = 0; col < columnCount; col++) {
+                    headers[col] = table.getTableModel().getColumnLabel(col);
+                }
+                writer.writeNext(headers);
+
+                // Write table data
+                for (int row = 0; row < rowCount; row++) {
+                    List<String> rowData = new ArrayList<>();
+                    for (int col = 0; col < columnCount; col++) {
+                        rowData.add(table.getTableModel().getCell(col, row));
+                    }
+                    writer.writeNext(rowData.toArray(new String[0]));
+                }
+                //System.out.println("CSV file saved at: " + path);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
         }
 
 

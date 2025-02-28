@@ -1,5 +1,7 @@
 package dev.noodle;
 
+import bsh.EvalError;
+import bsh.Interpreter;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.bundle.LanternaThemes;
@@ -10,38 +12,62 @@ import com.googlecode.lanterna.gui2.GridLayout;
 import com.googlecode.lanterna.gui2.Label;
 import com.googlecode.lanterna.gui2.Panel;
 import com.googlecode.lanterna.gui2.Window;
-import com.googlecode.lanterna.gui2.dialogs.DirectoryDialogBuilder;
-import com.googlecode.lanterna.gui2.dialogs.FileDialogBuilder;
-import com.googlecode.lanterna.gui2.dialogs.TextInputDialogBuilder;
-import com.googlecode.lanterna.gui2.dialogs.WaitingDialog;
+import com.googlecode.lanterna.gui2.dialogs.*;
 import com.googlecode.lanterna.gui2.menu.Menu;
 import com.googlecode.lanterna.gui2.menu.MenuBar;
 import com.googlecode.lanterna.gui2.menu.MenuItem;
 import com.googlecode.lanterna.gui2.table.Table;
 import com.googlecode.lanterna.gui2.table.TableModel;
+import com.googlecode.lanterna.input.KeyStroke;
+import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
+import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
-import dev.noodle.models.DBops;
+import dev.noodle.models.DataOps;
 
 
+import javax.swing.plaf.basic.BasicSplitPaneUI;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 import java.util.Objects;
 
-import static dev.noodle.models.DBops.getDatabaseURL;
+import static dev.noodle.models.DataOps.getDatabaseURL;
+
 
 
 public class TDM {
     //static double memory = 0;
     public static Table<String> table = new Table<>( "1", "2", "3", "4", "5");
 
+    // should this be its own class? or have a method encasing all of these in TDM????
+    public static Table<String> getTable() {
+        return table;
+    }
+    public static String getTablecell(int x, int y) {
+        return table.getTableModel().getCell(x, y);
+    }
+    public static List<String> getTablerow(int row) {
+        List<String> rowData = table.getTableModel().getRow(row);;
+        return rowData;
+    }
+    public static List<String> getTableColumn(int column) {
+        List<String> columnData = new ArrayList<>();
+        TableModel<String> model = table.getTableModel();
+        for (int row = 0; row < model.getRowCount(); row++) {
+            columnData.add(model.getCell(column, row));
+        }
+        return columnData;
+    }
+
     public static void main(String[] args) throws IOException {
-
-
         Theme theme = LanternaThemes.getRegisteredTheme("bigsnake");
 
         DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
@@ -61,7 +87,6 @@ public class TDM {
 
 
 
-
             Panel topSubPanel = new Panel();
             panel.addComponent(topSubPanel.withBorder(Borders.doubleLineBevel()), BorderLayout.Location.TOP);
             topSubPanel.setLayoutManager(new GridLayout(6));
@@ -75,7 +100,6 @@ public class TDM {
             Path[] selectedFilePaths = new Path[5];
 
             // setup memory usage monitoring
-            // TODO on this - it fluctuates memory usage back and forth maybe change to just call after new objects are loaded to memory?
             Label memoryLabel;
             topSubPanel.addComponent(memoryLabel = new Label("memory usage"), GridLayout.createHorizontallyEndAlignedLayoutData(3));
             Thread memoryThread = new Thread(() -> {
@@ -86,8 +110,8 @@ public class TDM {
                     throw new RuntimeException(e);
                 }
             });
-            memoryThread.setDaemon(true); // Set the thread as a daemon thread
-            memoryThread.start(); // Start the thread
+            memoryThread.setDaemon(true);
+            memoryThread.start();
 
 
             //shows active/ loading file -- interacted with by openFileDialog() method
@@ -105,11 +129,13 @@ public class TDM {
                 }
             }));
 
-            // TODO - implement save as by using directory menu and have a popup or something that asks filename
             //new method - open PATH dialog after having a user input popup
-            fileMenu.add(new MenuItem("Save As", () -> openDirDialog(0, finalSelectedFileLabel, selectedFilePaths, selectedFileNames, gui)));
+            fileMenu.add(new MenuItem("Save to Internal Memory", () -> System.out.println("Save As")));
 
-            Menu helpMenu = new Menu("Help");
+            fileMenu.add(new MenuItem("Save As CSV", () -> openSaveDialog(0, finalSelectedFileLabel, selectedFilePaths, selectedFileNames, gui)));
+
+
+
 
             Menu settingsMenu = new Menu("Settings");
 
@@ -129,9 +155,15 @@ public class TDM {
                 // Then exit the application.
             }));
             //Menu openMenu = new Menu("Save to internal memory");
+            Menu helpMenu = new Menu("Help");
+            Menu scriptMenu = new Menu("Scripts");
+            scriptMenu.add(new MenuItem("Open Script Editor", () -> showFullPageScriptDialog(gui, "Script Editor")));
+
+
+
 
             // add above objects to menu object
-            menubar.add(fileMenu).add(helpMenu); //.add(openMenu);
+            menubar.add(fileMenu).add(scriptMenu).add(helpMenu); //.add(openMenu);
 
 
             // init new panel
@@ -272,7 +304,6 @@ public class TDM {
 
             //content for leftSubPanel ends here
 
-
             // init mid - ie center panel
             Panel MidSubPanel = new Panel();
             MidSubPanel.setTheme(theme);
@@ -297,9 +328,8 @@ public class TDM {
                     int selectedRow = table.getSelectedRow();
                     int selectedCol = table.getSelectedColumn();
                     String cellValue = table.getTableModel().getCell(selectedCol, selectedRow);
-                    //System.out.println("Selected cell (" + selectedCol + "," + selectedRow + "): " + cellValue);
                     String result = new TextInputDialogBuilder()
-                            .setTitle("Input Required")
+                            .setTitle("Cell Wizard")
                             .setDescription("Modify Cell Value?")
                             .setInitialContent(cellValue)
                             .build()
@@ -307,8 +337,12 @@ public class TDM {
 
                     if (result != null) {
                         //System.out.println("User input: " + result);
+                        //todo set user input to new cell value and write to db
+                        //or check if there have been changes in x number of seconds then write?
+                        table.getTableModel().setCell(selectedCol, selectedRow, result);
                     } else {
-                        //todo set user input to new cell value
+
+
                     }
                 }
             });
@@ -348,6 +382,20 @@ public class TDM {
 
  */
 
+//            Panel shellPanel = new Panel();
+//            Theme shellTheme = LanternaThemes.getRegisteredTheme("default");
+//            shellPanel.setTheme(shellTheme);
+//            shellPanel.setLayoutManager(new GridLayout(1));
+//            panel.addComponent(shellPanel.withBorder(Borders.singleLine()),BorderLayout.Location.BOTTOM);
+//            shellPanel.addComponent(new Label("Enter BeanShell Commands:"));
+//            TextBox outputBox = new TextBox(new TerminalSize(50, 5));
+//            shellPanel.addComponent(outputBox);
+//            outputBox.setReadOnly(true);
+//            //shellPanel.addComponent(new Label("CTRL B to activate input"));
+//            TextBox inputBox = new TextBox(new TerminalSize(50, 3));
+//            shellPanel.addComponent(inputBox);
+
+            // Toggle Listener State
 
 
 
@@ -360,17 +408,12 @@ public class TDM {
             // Add the panel to the window
             mainWindow.setComponent(panel);
 
-
-
             // Add the main window to the GUI and wait for user interaction
             gui.addWindowAndWait(mainWindow);
 
 
-
             // Stop the screen once the GUI has exited
-            //screen.stopScreen();
-
-
+            screen.stopScreen();
 
         }
         catch (IOException e) {
@@ -391,7 +434,6 @@ public class TDM {
             }
         }
     }
-
 
 
 
@@ -454,7 +496,7 @@ public class TDM {
             //updateTable(String.valueOf(selectedFileNames[index]));
 
                 try {
-                    DBops.importCSV(String.valueOf(selectedFileNames[index]), String.valueOf(selectedFilePaths[index]));
+                    DataOps.importCSV(String.valueOf(selectedFileNames[index]), String.valueOf(selectedFilePaths[index]));
                 } catch (IOException e) {
 
                     throw new RuntimeException(e);
@@ -473,45 +515,68 @@ public class TDM {
                 }
         }
     }
-    private static void openDirDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, WindowBasedTextGUI gui) {
+    private static void openSaveDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, WindowBasedTextGUI gui) {
         //todo ask user what they want to name the file first
         //todo also figure out how to use opencsv to save back to csv and read from db
 
-        String input = String.valueOf(new DirectoryDialogBuilder()
+        String result = new TextInputDialogBuilder()
+                .setTitle("Save File as CSV")
+                .setDescription("please input a filename")
+                .build()
+                .showDialog(gui);
+
+        String filename = "TDump.csv";
+        if (result != null) {
+            if (result.contains(".csv")) {
+                filename = result;
+            }
+            else {
+                filename = result + ".csv";
+                //System.out.println(filename);
+            }
+        }
+
+        String directory = String.valueOf(new DirectoryDialogBuilder()
                 .setTitle("Select directory to save in")
                 .setDescription("Choose a directory")
                 .setActionLabel("Select")
                 .build()
                 .showDialog(gui));
 
-        if (!Objects.equals(input, "null")) {
-            Path path = Paths.get(input);
-            selectedFilePaths[index] = path.toAbsolutePath();
-            selectedFileLabels.setText(String.valueOf(selectedFileNames[index]));
-            System.out.println("Selected save path: " + selectedFilePaths[index]);
+        if (directory != null) {
+            String path = directory + File.separator + filename;
+            //selectedFilePaths[index] = path.toAbsolutePath();
+            //System.out.println("Selected save path: " + selectedFilePaths[index]);
+            try (CSVWriter writer = new CSVWriter(new FileWriter(path))) {
+                int columnCount = table.getTableModel().getColumnCount();
+                int rowCount = table.getTableModel().getRowCount();
+
+                String[] headers = new String[columnCount];
+                for (int col = 0; col < columnCount; col++) {
+                    headers[col] = table.getTableModel().getColumnLabel(col);
+                }
+                writer.writeNext(headers);
+
+                // Write table data
+                for (int row = 0; row < rowCount; row++) {
+                    List<String> rowData = new ArrayList<>();
+                    for (int col = 0; col < columnCount; col++) {
+                        rowData.add(table.getTableModel().getCell(col, row));
+                    }
+                    writer.writeNext(rowData.toArray(new String[0]));
+                }
+                //System.out.println("CSV file saved at: " + path);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+
+
         } else {
-            System.out.println("User canceled the dialog.");
+            return;
+
         }
     }
 
-        public static void runTaskWithWaitingDialog(TextGUI textGUI) {
-            // Create and display the WaitingDialog
-            WaitingDialog waitingDialog = WaitingDialog.createDialog("Please Wait", "Processing...");
-            new Thread(() -> {
-                try {
-                    // Simulate a long-running task
-                    Thread.sleep(5000); // 5 seconds
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                } finally {
-                    // Close the dialog after the task is complete
-                    waitingDialog.close();
-                }
-            }).start();
-
-            // Show the dialog and block until it's closed
-            waitingDialog.showDialog((WindowBasedTextGUI) textGUI);
-        }
 
     public static TableModel<String> updateTable(String FILENAME) throws SQLException {
         //Table<String> tableData = new Table<>();
@@ -554,7 +619,66 @@ public class TDM {
         }
         return tableData.getTableModel();
     }
+    public static String showFullPageScriptDialog(WindowBasedTextGUI gui, String title) {
 
+        BasicWindow dialogWindow = new BasicWindow(title);
+        Panel panel = new Panel(new GridLayout(1));
+
+        TextBox textBox = new TextBox("import dev.noodle.*", TextBox.Style.MULTI_LINE)
+                .setLayoutData(GridLayout.createLayoutData(
+                        GridLayout.Alignment.FILL, // Fill horizontally
+                        GridLayout.Alignment.FILL, // Fill vertically
+                        true,  // Grab extra horizontal space
+                        true   // Grab extra vertical space
+                ))
+                .setVerticalFocusSwitching(true);
+
+
+        panel.addComponent(textBox);
+
+        //change mode with dropdown? for py and beanshell as well as actuall shell terminal
+
+        // TODO process input with beanshell and add save ability to sqlite
+
+        // Submit button
+        final String[] result = {null};
+        Button submitButton = new Button("Submit", () -> {
+            Interpreter i = new Interpreter();
+            result[0] = textBox.getText();
+            //textBox.getText();
+            try {
+                Object BSHresult = i.eval(textBox.getText());
+                showErrorDialog(gui, "Beanshell Script result", String.valueOf((BSHresult)));
+            } catch (EvalError e) {
+                showErrorDialog(gui, "Beanshell Script error", (e + "\n" +(e.getErrorText() +"\n"+e.getErrorLineNumber())));
+                //throw new RuntimeException(e);
+            }
+
+//TODO - add program and dependency classpath to beanshell http://beanshell.org/manual/bshmanual.html#Adding_BeanShell_Commands
+
+
+        });
+        Button exitButton = new Button("Exit", () -> {
+            dialogWindow.close();
+        });
+
+
+        panel.addComponent(submitButton);
+        panel.addComponent(exitButton);
+        dialogWindow.setComponent(panel);
+        dialogWindow.setHints(java.util.Arrays.asList(Window.Hint.FULL_SCREEN)); // Make it full-page
+
+        gui.addWindowAndWait(dialogWindow);
+        return result[0];
+    }
+    public static void showErrorDialog(WindowBasedTextGUI textGUI, String title, String message) {
+        MessageDialog.showMessageDialog(
+                textGUI,
+                title,
+                message,
+                MessageDialogButton.OK
+        );
+    }
 
 
 }
