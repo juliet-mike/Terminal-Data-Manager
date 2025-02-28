@@ -463,9 +463,6 @@ public class TDM {
                 } catch (InterruptedException e) {
 
                     throw new RuntimeException(e);
-                } catch (CsvValidationException e) {
-
-                    throw new RuntimeException(e);
                 } catch (SQLException e) {
 
                     throw new RuntimeException(e);
