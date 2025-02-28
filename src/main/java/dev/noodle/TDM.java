@@ -12,31 +12,32 @@ import com.googlecode.lanterna.gui2.Panel;
 import com.googlecode.lanterna.gui2.Window;
 import com.googlecode.lanterna.gui2.dialogs.DirectoryDialogBuilder;
 import com.googlecode.lanterna.gui2.dialogs.FileDialogBuilder;
+import com.googlecode.lanterna.gui2.dialogs.TextInputDialogBuilder;
 import com.googlecode.lanterna.gui2.dialogs.WaitingDialog;
 import com.googlecode.lanterna.gui2.menu.Menu;
 import com.googlecode.lanterna.gui2.menu.MenuBar;
 import com.googlecode.lanterna.gui2.menu.MenuItem;
 import com.googlecode.lanterna.gui2.table.Table;
+import com.googlecode.lanterna.gui2.table.TableModel;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
+import com.opencsv.exceptions.CsvValidationException;
 import dev.noodle.models.DBops;
 
 
-import java.io.BufferedReader;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.sql.*;
 import java.util.Arrays;
-import java.util.List;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Objects;
 
+import static dev.noodle.models.DBops.getDatabaseURL;
 
-import java.sql.*;
 
 public class TDM {
     //static double memory = 0;
+    public static Table<String> table = new Table<>( "1", "2", "3", "4", "5");
 
     public static void main(String[] args) throws IOException {
 
@@ -96,13 +97,17 @@ public class TDM {
 
             Menu fileMenu = new Menu("File");
             Label finalSelectedFileLabel = selectedFileLabel0;
-            fileMenu.add(new MenuItem("Import New File", () -> openFileDialog(0, finalSelectedFileLabel, selectedFilePaths, selectedFileNames, gui)));
+            fileMenu.add(new MenuItem("Import New File", () -> {
+                try {
+                    openFileDialog(0, finalSelectedFileLabel, selectedFilePaths, selectedFileNames, gui);
+                } catch (SQLException | CsvValidationException | IOException | InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }));
 
             // TODO - implement save as by using directory menu and have a popup or something that asks filename
             //new method - open PATH dialog after having a user input popup
             fileMenu.add(new MenuItem("Save As", () -> openDirDialog(0, finalSelectedFileLabel, selectedFilePaths, selectedFileNames, gui)));
-
-
 
             Menu helpMenu = new Menu("Help");
 
@@ -134,14 +139,67 @@ public class TDM {
             leftSubPanel.setTheme(theme);
             leftSubPanel.setLayoutManager(new LinearLayout(Direction.VERTICAL));
             panel.addComponent(leftSubPanel.withBorder(Borders.singleLine()), BorderLayout.Location.LEFT); // Place button at the bottom of the panel
-            leftSubPanel.addComponent(new Label("Dataframe Operations").setForegroundColor(TextColor.ANSI.BLUE)); // maybe move this to the panel title
-            //leftSubPanel.addComponent(new EmptySpace(new TerminalSize(2, 1)));
-            //final Path[] fileName = {null};
-            //final Path[] filePath = {null};
+            leftSubPanel.addComponent(new Label("Quick Operations").setForegroundColor(TextColor.ANSI.BLUE)); // maybe move this to the panel title
+
 
             TerminalSize size = new TerminalSize(17, 20);
             ActionListBox dataframeActionListBox = new ActionListBox(size);
 
+            dataframeActionListBox.addItem("Quick CAL", new Runnable() {
+                @Override
+                public void run() {
+                    // Code to run when action activated
+                }
+            });
+            dataframeActionListBox.addItem("Add", new Runnable() {
+                @Override
+                public void run() {
+                    // Code to run when action activated
+                }
+            });
+            dataframeActionListBox.addItem("Subtract", new Runnable() {
+                @Override
+                public void run() {
+                    // Code to run when action activated
+                }
+            });
+            dataframeActionListBox.addItem("Multiply", new Runnable() {
+                @Override
+                public void run() {
+                    // Code to run when action activated
+                }
+            });
+            dataframeActionListBox.addItem("Divide", new Runnable() {
+                @Override
+                public void run() {
+                    // Code to run when action activated
+                }
+            });
+            dataframeActionListBox.addItem("Exponent", new Runnable() {
+                @Override
+                public void run() {
+                    // Code to run when action activated
+                }
+            });
+            dataframeActionListBox.addItem("ABS", new Runnable() {
+                @Override
+                public void run() {
+                    // Code to run when action activated
+                }
+            });
+            dataframeActionListBox.addItem("Round", new Runnable() {
+                @Override
+                public void run() {
+                    // Code to run when action activated
+                }
+            });
+
+            dataframeActionListBox.addItem("Regression", new Runnable() {
+                @Override
+                public void run() {
+                    // Code to run when action activated
+                }
+            });
             dataframeActionListBox.addItem("Sort", new Runnable() {
                 @Override
                 public void run() {
@@ -208,24 +266,6 @@ public class TDM {
                     // Code to run when action activated
                 }
             });
-            dataframeActionListBox.addItem("ABS", new Runnable() {
-                @Override
-                public void run() {
-                    // Code to run when action activated
-                }
-            });
-            dataframeActionListBox.addItem("Round", new Runnable() {
-                @Override
-                public void run() {
-                    // Code to run when action activated
-                }
-            });
-            dataframeActionListBox.addItem("Exponent", new Runnable() {
-                @Override
-                public void run() {
-                    // Code to run when action activated
-                }
-            });
 
 
             leftSubPanel.addComponent(dataframeActionListBox.withBorder(Borders.singleLine()));
@@ -236,19 +276,16 @@ public class TDM {
             // init mid - ie center panel
             Panel MidSubPanel = new Panel();
             MidSubPanel.setTheme(theme);
-            MidSubPanel.setLayoutManager(new GridLayout(2));
+            MidSubPanel.setLayoutManager(new GridLayout(1));
             panel.addComponent(MidSubPanel.withBorder(Borders.doubleLine()), BorderLayout.Location.CENTER);
             // Create the table and store it in a variable
-            String Index = "index";
-            //List<String[]> data = DBops.updateGUI("Comp.csv");
-            Table<String> table = new Table<>( "1", "2", "3", "4", "5");
 
-
+           // Table<String> table = new Table<>( "1", "2", "3", "4", "5");
             // Add the table to the panel
             MidSubPanel.addComponent(table.withBorder(Borders.doubleLine()));
             // Add a row to the table
 
-            for (int i = 0; i < 200; i++) {
+            for (int i = 0; i < 50; i++) {
                 table.getTableModel().addRow("1", "2", "3", "4", "5");
             }
 
@@ -260,12 +297,24 @@ public class TDM {
                     int selectedRow = table.getSelectedRow();
                     int selectedCol = table.getSelectedColumn();
                     String cellValue = table.getTableModel().getCell(selectedCol, selectedRow);
-                    System.out.println("Selected cell (" + selectedCol + "," + selectedRow + "): " + cellValue);
+                    //System.out.println("Selected cell (" + selectedCol + "," + selectedRow + "): " + cellValue);
+                    String result = new TextInputDialogBuilder()
+                            .setTitle("Input Required")
+                            .setDescription("Please enter your name:")
+                            .setInitialContent(cellValue)
+                            .build()
+                            .showDialog(gui);
+
+                    if (result != null) {
+                        //System.out.println("User input: " + result);
+                    } else {
+                        //todo set user input to new cell value
+                    }
                 }
             });
             // mid/center panel ends here
 
-
+/*
             // init right panel
             Panel RightSubPanel = new Panel();
             RightSubPanel.setTheme(theme);
@@ -297,6 +346,8 @@ public class TDM {
             varStatTable2.getTableModel().addRow("Rating","4.2","4.2","4.2","5.0");
             RightSubPanel.addComponent(varStatTable2.withBorder(Borders.singleLine()));
 
+ */
+
 
 
 
@@ -315,6 +366,7 @@ public class TDM {
             gui.addWindowAndWait(mainWindow);
 
 
+
             // Stop the screen once the GUI has exited
             //screen.stopScreen();
 
@@ -323,6 +375,7 @@ public class TDM {
         }
         catch (IOException e) {
             e.printStackTrace();
+
         } finally {
             if(screen != null) {
                 try {
@@ -381,9 +434,7 @@ public class TDM {
                 }
         }
     }
-    private static void openFileDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, WindowBasedTextGUI gui) {
-        //TODO add some method of either detecting headers or asking the user if there are headers -- see left panel button
-        Theme theme2 = LanternaThemes.getRegisteredTheme("bigsnake");
+    private static void openFileDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, WindowBasedTextGUI gui) throws SQLException, CsvValidationException, IOException, InterruptedException {
 
         // okay the file dialouge is not modifiable so we will see how this goes
         String input = String.valueOf(new FileDialogBuilder()
@@ -399,15 +450,39 @@ public class TDM {
             selectedFilePaths[index] = path.toAbsolutePath();
             selectedFileNames[index] = path.getFileName();
             selectedFileLabels.setText(String.valueOf(selectedFileNames[index]));
-            System.out.println("Selected file: " + selectedFileNames[index]);
-            System.out.println("Selected path: " + selectedFilePaths[index]);
-        } else {
-            System.out.println("User canceled the dialog.");
+            //System.out.println("Selected file: " + selectedFileNames[index]);
+            //System.out.println("Selected path: " + selectedFilePaths[index]);
+            //updateTable(String.valueOf(selectedFileNames[index]));
+ ;
+
+                try {
+                    DBops.importCSV(String.valueOf(selectedFileNames[index]), String.valueOf(selectedFilePaths[index]));
+                } catch (IOException e) {
+
+                    throw new RuntimeException(e);
+                } catch (InterruptedException e) {
+
+                    throw new RuntimeException(e);
+                } catch (CsvValidationException e) {
+
+                    throw new RuntimeException(e);
+                } catch (SQLException e) {
+
+                    throw new RuntimeException(e);
+                }
+                try {
+                    table.setTableModel(updateTable(String.valueOf(selectedFileNames[index])));
+                } catch (SQLException e) {
+
+                    throw new RuntimeException(e);
+                }
+
+
         }
     }
     private static void openDirDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, WindowBasedTextGUI gui) {
-        //TODO add to save button and then change required vars and returns
-        // okay the file dialouge is not modifiable so we will see how this goes
+        //todo ask user what they want to name the file first
+        //todo also figure out how to use opencsv to save back to csv and read from db
         String input = String.valueOf(new DirectoryDialogBuilder()
                 .setTitle("Select directory to save in")
                 .setDescription("Choose a directory")
@@ -443,6 +518,49 @@ public class TDM {
             // Show the dialog and block until it's closed
             waitingDialog.showDialog((WindowBasedTextGUI) textGUI);
         }
+
+    public static TableModel<String> updateTable(String FILENAME) throws SQLException {
+        //Table<String> tableData = new Table<>();
+//        try (Connection conn = DriverManager.getConnection(getDatabaseURL());
+//             Statement stmt = conn.createStatement();
+//             ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table';")) {
+//
+//            System.out.println("Tables in the database:");
+//            while (rs.next()) {
+//                System.out.println(rs.getString("name"));
+//            }
+//        } catch (SQLException e) {
+//            System.err.println("Error: " + e.getMessage());
+//        }
+
+        Table<String> tableData;
+        try (Connection conn = DriverManager.getConnection(getDatabaseURL());
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + "[" +FILENAME+"]" )) {
+
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+
+            // Add headers as the first row
+            String[] headers = new String[columnCount];
+            for (int i = 1; i <= columnCount; i++) {
+                headers[i - 1] = metaData.getColumnName(i);
+            }
+            tableData = new Table<>(headers);
+            //tableData.getTableModel().addRow(headers);
+
+            // Add row data
+            while (rs.next()) {
+                String[] row = new String[columnCount];
+                for (int i = 1; i <= columnCount; i++) {
+                    row[i - 1] = rs.getString(i);
+                }
+                tableData.getTableModel().addRow(row);
+            }
+        }
+        return tableData.getTableModel();
+    }
+
 
 
 }

@@ -1,16 +1,15 @@
 package dev.noodle.models;
 
 
-import com.googlecode.lanterna.gui2.table.Table;
+
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.FileReader;
 import java.io.IOException;
+
 import java.sql.*;
-import java.io.File;
-import java.net.URL;
-import java.nio.file.Paths;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
@@ -18,126 +17,75 @@ import java.util.ArrayList;
 import java.util.List;
 
 
+import static dev.noodle.models.CreateSQLiteDB.getJarDir;
+import static dev.noodle.models.SQLsanitize.isSQLKeyword;
+
+
 public class DBops {
-    public static void main(String[] args) throws Exception {
-        String fileName = "comp.csv";
-        String filePath = "H:\\Other computers\\My MacBook Air\\Terminal-Data-Manager\\target\\classes\\comp.csv";
-        System.out.println(getDatabaseURL());
-        String[] array1 = {"apple", "banana", "cherry"};
-        String[] array2 = {"red", "green", "blue"};
-        String[] array3 = {"one", "two", "three"};
 
-        // Creating a List to hold the String arrays
-        List<String[]> listOfArrays = new ArrayList<>();
-
-        // Adding the String arrays to the List
-        listOfArrays.add(array1);
-        listOfArrays.add(array2);
-        listOfArrays.add(array3);
-
-        //importTable(fileName, filePath, listOfArrays);
-        //appendFileToList(fileName, filePath);
-        importCSV(fileName, filePath);
-
-
-    }
 
     public static String getDatabaseURL() {
-        URL resource = DBops.class.getResource("/workingDb.sqlite");
+        //URL resource = DBops.class.getResource("/workingDb.db");
 
-        if (resource == null) {
-            System.err.println("Could not find 'workingDb.sqlite' in resources folder!");
-        }
+//        if (resource == null) {
+//            //System.err.println("Could not find 'workingDb.sqlite' in resources folder!");
+//            String url = "jdbc:sqlite:" + getJarDir() + "/workingDb.db";
+//            try (Connection conn = DriverManager.getConnection(url)) {
+//                if (conn != null) {
+//                    System.out.println("A new database file has been created!");
+//                }
+//            } catch (SQLException e) {
+//                System.out.println(e.getMessage());
+//            }
+//        }
 
-        // 2) Convert URL -> File -> Absolute Path
-        String dbPath = null;
-        try {
-            assert resource != null;
-            File dbFile = Paths.get(resource.toURI()).toFile();
-            dbPath = dbFile.getAbsolutePath();
-
-        } catch (Exception e) {
-            System.err.println("Error: " + e.getMessage());
-            e.printStackTrace();
-        }
-        String DBurl = "jdbc:sqlite:" + dbPath;
+        String DBurl = "jdbc:sqlite:" + getJarDir() + "/workingDb.db";
         return DBurl;
     }
 
 
-    public static void importTable(String FILENAME, String FILEPATH, List<String[]> rows) throws SQLException {
-        //String url = "jdbc:sqlite:workingDb.sqlite";
-        String url = getDatabaseURL();
-
-        StringBuilder sb = new StringBuilder();
-        sb.append("CREATE TABLE IF NOT EXISTS [")
-                .append(FILENAME)
-                .append("] (")
-                .append("id INTEGER PRIMARY KEY AUTOINCREMENT, ");
-
-        // TODO i can almost promise this will throw an error later
-        String[] headers = rows.get(0);
-
-        for (int i = 0; i < headers.length; i++) {
-            sb.append("\"").append(headers[i]).append("\"");
-            sb.append(" TEXT");
-            if (i < headers.length - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append(");");
-
-
-        String createTableSQL = sb.toString();
-        assert url != null;
-        Connection conn = DriverManager.getConnection(url);
-        // Create the table if it doesn't exist
-        conn.createStatement().execute(createTableSQL);
-        if (conn != null) {
-            try {
-                conn.close();
-                System.out.println("Connection closed successfully.");
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
-        //addRowsToTable(FILEPATH, rows);
-
-        appendFileToList(FILENAME, FILEPATH);
-
-
-    }
-
-
-    public static List<String[]> updateGUI(String FILENAME) throws SQLException {
-        List<String[]> tableData = new ArrayList<>();
-
-        try (Connection conn = DriverManager.getConnection(getDatabaseURL());
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM " + FILENAME)) {
-
-            ResultSetMetaData metaData = rs.getMetaData();
-            int columnCount = metaData.getColumnCount();
-
-            // Add headers as the first row
-            String[] headers = new String[columnCount];
-            for (int i = 1; i <= columnCount; i++) {
-                headers[i - 1] = metaData.getColumnName(i);
-            }
-            tableData.add(headers);
-
-            // Add row data
-            while (rs.next()) {
-                String[] row = new String[columnCount];
-                for (int i = 1; i <= columnCount; i++) {
-                    row[i - 1] = rs.getString(i);
-                }
-                tableData.add(row);
-            }
-        }
-        return tableData;
-    }
-
+//    public static void importTable(String FILENAME, String FILEPATH, List<String[]> rows) throws SQLException {
+//        //String url = "jdbc:sqlite:workingDb.sqlite";
+//        String url = getDatabaseURL();
+//
+//        StringBuilder sb = new StringBuilder();
+//        sb.append("CREATE TABLE IF NOT EXISTS [")
+//                .append(FILENAME)
+//                .append("] (")
+//                .append("id INTEGER PRIMARY KEY AUTOINCREMENT, ");
+//
+//        // TODO i can almost promise this will throw an error later
+//        String[] headers = rows.get(0);
+//
+//        for (int i = 0; i < headers.length; i++) {
+//            sb.append("\"").append(headers[i]).append("\"");
+//            sb.append(" TEXT");
+//            if (i < headers.length - 1) {
+//                sb.append(", ");
+//            }
+//        }
+//        sb.append(");");
+//
+//
+//        String createTableSQL = sb.toString();
+//        assert url != null;
+//        Connection conn = DriverManager.getConnection(url);
+//        // Create the table if it doesn't exist
+//        conn.createStatement().execute(createTableSQL);
+//        if (conn != null) {
+//            try {
+//                conn.close();
+//                System.out.println("Connection closed successfully.");
+//            } catch (SQLException e) {
+//                e.printStackTrace();
+//            }
+//        }
+//        //addRowsToTable(FILEPATH, rows);
+//
+//        appendFileToList(FILENAME, FILEPATH);
+//
+//
+//    }
 
 
 
@@ -185,7 +133,7 @@ public class DBops {
             stmt.executeUpdate(createTableSQL);
         }
 
-        String insertSQL = "INSERT OR IGNORE INTO FileList (FILENAME, FILEPATH) VALUES (?, ?)";
+        String insertSQL = "INSERT OR IGNORE INTO FileList (FILENAME ,FILEPATH) VALUES (?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
             pstmt.setString(1, FILENAME);
             pstmt.setString(2, FILEPATH);
@@ -199,10 +147,12 @@ public class DBops {
 
     }
 
+
     public static void importCSV(String FILENAME, String FILEPATH) throws IOException, InterruptedException, CsvValidationException, SQLException {
 
         CSVReader reader = new CSVReader(new FileReader(FILEPATH));
         String[] data = reader.readNext(); // Read the first row (data)
+
 
         Connection conn = DriverManager.getConnection(getDatabaseURL());
         Statement stmt = conn.createStatement();
@@ -210,16 +160,22 @@ public class DBops {
         stmt.execute("DROP TABLE IF EXISTS [" + FILENAME + "]");
 
 
+
+
             StringBuilder sb = new StringBuilder();
             sb.append("CREATE TABLE IF NOT EXISTS [")
                     .append(FILENAME)
                     .append("] (")
-                    .append("id INTEGER PRIMARY KEY AUTOINCREMENT, ");
+                    .append("ID INTEGER PRIMARY KEY AUTOINCREMENT, ");
 
             // TODO i can almost promise this will throw an error later
+                    // lol it did cause SQL syntax thinks one of the headers is a SQL command ugh
 
             for (int i = 0; i < data.length; i++) {
-                sb.append("\"").append(data[i]).append("\"");
+//                if (isSQLKeyword(data[i])) {
+//                    data[i] = "SANITIZED_col"+ i ;
+//                }
+                sb.append("[").append(data[i]).append("]");
                 sb.append(" TEXT");
                 if (i < data.length - 1) {
                     sb.append(", ");
@@ -229,13 +185,15 @@ public class DBops {
 
             stmt.execute(sb.toString());
 
+
             StringBuilder insertSQL = new StringBuilder("INSERT INTO [" + FILENAME + "] (");
-            insertSQL.append(String.join(", ", data)).append(") VALUES (");
+            insertSQL.append(String.join(", ", data))
+                    .append(") VALUES (");
             insertSQL.append("?,".repeat(data.length).substring(0, data.length * 2 - 1)).append(")");
 
             try (PreparedStatement pstmt = conn.prepareStatement(insertSQL.toString())) {
                 String[] row;
-                int batchSize = 500; // Adjust batch size for large CSVs
+                int batchSize = 100; // Adjust batch size for large CSVs
                 int count = 0;
 
                 while ((row = reader.readNext()) != null) {
@@ -253,6 +211,7 @@ public class DBops {
             }
             appendFileToList(FILENAME, FILEPATH);
         }
+
 
     }
 
