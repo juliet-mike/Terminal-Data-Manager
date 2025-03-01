@@ -7,19 +7,12 @@ import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.bundle.LanternaThemes;
 import com.googlecode.lanterna.graphics.Theme;
 import com.googlecode.lanterna.gui2.*;
-import com.googlecode.lanterna.gui2.BorderLayout;
-import com.googlecode.lanterna.gui2.GridLayout;
-import com.googlecode.lanterna.gui2.Label;
-import com.googlecode.lanterna.gui2.Panel;
-import com.googlecode.lanterna.gui2.Window;
 import com.googlecode.lanterna.gui2.dialogs.*;
 import com.googlecode.lanterna.gui2.menu.Menu;
 import com.googlecode.lanterna.gui2.menu.MenuBar;
 import com.googlecode.lanterna.gui2.menu.MenuItem;
 import com.googlecode.lanterna.gui2.table.Table;
 import com.googlecode.lanterna.gui2.table.TableModel;
-import com.googlecode.lanterna.input.KeyStroke;
-import com.googlecode.lanterna.input.KeyType;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.opencsv.CSVWriter;
@@ -27,7 +20,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import dev.noodle.models.DataOps;
 
 
-import javax.swing.plaf.basic.BasicSplitPaneUI;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -44,9 +37,9 @@ import static dev.noodle.models.DataOps.getDatabaseURL;
 
 
 public class TDM {
-    //static double memory = 0;
-    public static Table<String> table = new Table<>( "1", "2", "3", "4", "5");
 
+
+    public static Table<String> table = new Table<>( "1", "2", "3", "4", "5");
     // should this be its own class? or have a method encasing all of these in TDM????
     public static Table<String> getTable() {
         return table;
@@ -66,6 +59,7 @@ public class TDM {
         }
         return columnData;
     }
+
 
     public static void main(String[] args) throws IOException {
         Theme theme = LanternaThemes.getRegisteredTheme("bigsnake");
@@ -132,7 +126,7 @@ public class TDM {
             //new method - open PATH dialog after having a user input popup
             fileMenu.add(new MenuItem("Save to Internal Memory", () -> System.out.println("Save As")));
 
-            fileMenu.add(new MenuItem("Save As CSV", () -> openSaveDialog(0, finalSelectedFileLabel, selectedFilePaths, selectedFileNames, gui)));
+            fileMenu.add(new MenuItem("Save As CSV", () -> openSaveDialog(gui)));
 
 
 
@@ -159,12 +153,8 @@ public class TDM {
             Menu scriptMenu = new Menu("Scripts");
             scriptMenu.add(new MenuItem("Open Script Editor", () -> showFullPageScriptDialog(gui, "Script Editor")));
 
-
-
-
             // add above objects to menu object
             menubar.add(fileMenu).add(scriptMenu).add(helpMenu); //.add(openMenu);
-
 
             // init new panel
             Panel leftSubPanel = new Panel();
@@ -301,7 +291,6 @@ public class TDM {
 
 
             leftSubPanel.addComponent(dataframeActionListBox.withBorder(Borders.singleLine()));
-
             //content for leftSubPanel ends here
 
             // init mid - ie center panel
@@ -347,7 +336,6 @@ public class TDM {
                 }
             });
             // mid/center panel ends here
-
 /*
             // init right panel
             Panel RightSubPanel = new Panel();
@@ -411,25 +399,20 @@ public class TDM {
             // Add the main window to the GUI and wait for user interaction
             gui.addWindowAndWait(mainWindow);
 
-
             // Stop the screen once the GUI has exited
             screen.stopScreen();
 
         }
-        catch (IOException e) {
-            e.printStackTrace();
-
-        } finally {
+         finally {
             if(screen != null) {
                 try {
                     /*
                     The close() call here will restore the terminal by exiting from private mode which was done in
-                    the call to startScreen(), and also restore things like echo mode and intr
+                    the call to startScreen(), and also restore things like echo mode
                      */
                     screen.close();
-                }
-                catch(IOException e) {
-                    e.printStackTrace();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }
@@ -462,7 +445,7 @@ public class TDM {
         System.exit(0);
     };
 
-    public static class MemoryTracker {
+    private static class MemoryTracker {
         public static void getMemoryTracking(Label memoryLabel) throws InterruptedException {
                 while (true) {
                         int mb = 1024 * 1024;
@@ -485,7 +468,6 @@ public class TDM {
                 .build()
                 .showDialog(gui));
 
-
         if (!Objects.equals(input, "null")) {
             Path path = Paths.get(input);
             selectedFilePaths[index] = path.toAbsolutePath();
@@ -498,24 +480,24 @@ public class TDM {
                 try {
                     DataOps.importCSV(String.valueOf(selectedFileNames[index]), String.valueOf(selectedFilePaths[index]));
                 } catch (IOException e) {
-
-                    throw new RuntimeException(e);
+                    showErrorDialog(gui, "IO error", String.valueOf((e)));
+                    //throw new RuntimeException(e);
                 } catch (InterruptedException e) {
-
-                    throw new RuntimeException(e);
+                    showErrorDialog(gui, "Interrupted exception", String.valueOf((e)));
+                    //throw new RuntimeException(e);
                 } catch (SQLException e) {
-
-                    throw new RuntimeException(e);
+                    showErrorDialog(gui, "SQL Error", String.valueOf((e)));
+                    //throw new RuntimeException(e);
                 }
                 try {
                     table.setTableModel(updateTable(String.valueOf(selectedFileNames[index])));
                 } catch (SQLException e) {
-
-                    throw new RuntimeException(e);
+                    showErrorDialog(gui, "SQL Error", String.valueOf((e)));
+                    //throw new RuntimeException(e);
                 }
         }
     }
-    private static void openSaveDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, WindowBasedTextGUI gui) {
+    private static void openSaveDialog( WindowBasedTextGUI gui) {
         //todo ask user what they want to name the file first
         //todo also figure out how to use opencsv to save back to csv and read from db
 
@@ -567,12 +549,10 @@ public class TDM {
                 }
                 //System.out.println("CSV file saved at: " + path);
             } catch (IOException e) {
-                e.printStackTrace();
+                showErrorDialog(gui, "File Save Error", String.valueOf((e)));
+                //e.printStackTrace();
             }
 
-
-        } else {
-            return;
 
         }
     }
@@ -619,7 +599,7 @@ public class TDM {
         }
         return tableData.getTableModel();
     }
-    public static String showFullPageScriptDialog(WindowBasedTextGUI gui, String title) {
+    public static void showFullPageScriptDialog(WindowBasedTextGUI gui, String title) {
 
         BasicWindow dialogWindow = new BasicWindow(title);
         Panel panel = new Panel(new GridLayout(1));
@@ -650,7 +630,7 @@ public class TDM {
                 Object BSHresult = i.eval(textBox.getText());
                 showErrorDialog(gui, "Beanshell Script result", String.valueOf((BSHresult)));
             } catch (EvalError e) {
-                showErrorDialog(gui, "Beanshell Script error", (e + "\n" +(e.getErrorText() +"\n"+e.getErrorLineNumber())));
+                showErrorDialog(gui, "Beanshell Script error", (e + "\n" +(e.getErrorText() +"\n")));
                 //throw new RuntimeException(e);
             }
 
@@ -666,10 +646,9 @@ public class TDM {
         panel.addComponent(submitButton);
         panel.addComponent(exitButton);
         dialogWindow.setComponent(panel);
-        dialogWindow.setHints(java.util.Arrays.asList(Window.Hint.FULL_SCREEN)); // Make it full-page
+        dialogWindow.setHints(List.of(Window.Hint.FULL_SCREEN)); // Make it full-page
 
         gui.addWindowAndWait(dialogWindow);
-        return result[0];
     }
     public static void showErrorDialog(WindowBasedTextGUI textGUI, String title, String message) {
         MessageDialog.showMessageDialog(
