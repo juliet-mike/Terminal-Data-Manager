@@ -1,7 +1,6 @@
 package dev.noodle;
 
-import bsh.EvalError;
-import bsh.Interpreter;
+import bsh.*;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.bundle.LanternaThemes;
@@ -15,6 +14,8 @@ import com.googlecode.lanterna.gui2.table.Table;
 import com.googlecode.lanterna.gui2.table.TableModel;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
+
+
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 import dev.noodle.models.DataOps;
@@ -48,7 +49,7 @@ public class TDM {
         return table.getTableModel().getCell(x, y);
     }
     public static List<String> getTablerow(int row) {
-        List<String> rowData = table.getTableModel().getRow(row);;
+        List<String> rowData = table.getTableModel().getRow(row);
         return rowData;
     }
     public static List<String> getTableColumn(int column) {
@@ -58,6 +59,9 @@ public class TDM {
             columnData.add(model.getCell(column, row));
         }
         return columnData;
+    }
+    public static String getTableCell(int column, int row) {
+        return table.getTableModel().getCell(column, row);
     }
 
 
@@ -124,10 +128,16 @@ public class TDM {
             }));
 
             //new method - open PATH dialog after having a user input popup
-            fileMenu.add(new MenuItem("Save to Internal Memory", () -> System.out.println("Save As")));
+            fileMenu.add(new MenuItem("Save to Internal Memory", () -> {
+                try {
+                    DataOps.TabletoSQL(Arrays.toString(selectedFileNames));
+                } catch (SQLException e) {
+                    showErrorDialog(gui, "ERROR", "there was an error saving the current table \n check to make sure you have no SQL strings in the table");
+                    throw new RuntimeException(e);
+                }
+            }));
 
             fileMenu.add(new MenuItem("Save As CSV", () -> openSaveDialog(gui)));
-
 
 
 
@@ -137,7 +147,7 @@ public class TDM {
 
             fileMenu.add(settingsMenu);
             Screen finalScreen = screen;
-            Screen finalScreen1 = screen;
+
             fileMenu.add(new MenuItem("Exit", () -> {
                 // First, close the screen.
                 try {
@@ -336,39 +346,6 @@ public class TDM {
                 }
             });
             // mid/center panel ends here
-/*
-            // init right panel
-            Panel RightSubPanel = new Panel();
-            RightSubPanel.setTheme(theme);
-            RightSubPanel.setLayoutManager(new LinearLayout(Direction.VERTICAL));
-            panel.addComponent(RightSubPanel.withBorder(Borders.singleLine()), BorderLayout.Location.RIGHT); // Place button at the bottom of the panel
-            //RightSubPanel.addComponent(new Label("Data query"));
-
-            //RightSubPanel.addComponent(new EmptySpace(new TerminalSize(0, 0)));
-
-            RightSubPanel.addComponent(new Label("Variable Stats").setForegroundColor(TextColor.ANSI.BLUE));
-            Table<String> varStatTable1 = new Table<>("VAR", "OBS", "MISS", "UNIQ", "RNG");
-            varStatTable1.getTableModel().addRow("Age","500", "0","100","18-80");
-            varStatTable1.getTableModel().addRow("Gender","500","0","2","N/A");
-            varStatTable1.getTableModel().addRow("Income","480","20","400","$20K");
-            varStatTable1.getTableModel().addRow("Education","500","0","5","0-4");
-            varStatTable1.getTableModel().addRow("Region","500","0","7","N/A");
-            varStatTable1.getTableModel().addRow("Marital","500","0","3","N/A");
-            varStatTable1.getTableModel().addRow("Employment","490","10","6","N/A");
-            //TerminalSize statTable1Size = varStatTable1.getSize();
-            RightSubPanel.addComponent(varStatTable1.withBorder(Borders.singleLine()));
-
-            Table<String> varStatTable2 = new Table<>("VAR", "AVG", "MED", "MEAN", "MAX");
-            varStatTable2.getTableModel().addRow("Age","35.5","35","35.5","80");
-            varStatTable2.getTableModel().addRow("Income","55000","54000","55000","15");
-            varStatTable2.getTableModel().addRow("Score","75.5","75","75.5","100");
-            varStatTable2.getTableModel().addRow("Height","5.8","5.8","5.8","6.5");
-            varStatTable2.getTableModel().addRow("Weight","150","150","150","200");
-            varStatTable2.getTableModel().addRow("Experience","10","10","10","30");
-            varStatTable2.getTableModel().addRow("Rating","4.2","4.2","4.2","5.0");
-            RightSubPanel.addComponent(varStatTable2.withBorder(Borders.singleLine()));
-
- */
 
 //            Panel shellPanel = new Panel();
 //            Theme shellTheme = LanternaThemes.getRegisteredTheme("default");
@@ -420,30 +397,12 @@ public class TDM {
 
 
 
-    public static Object parseValue(String value) {
-        try {
-            // Try parsing as an integer
-            return Integer.parseInt(value);
-        } catch (NumberFormatException e1) {
-            try {
-                // Try parsing as a float
-                return Float.parseFloat(value);
-            } catch (NumberFormatException e2) {
-                try {
-                    // Try parsing as a double
-                    return Double.parseDouble(value);
-                } catch (NumberFormatException e3) {
-                    // Return as string if it's none of the above
-                    return value;
-                }
-            }
-        }
-    }
+
     private static void shutDown(Screen screen) throws IOException {
         System.out.println("Shutting down TDM");
         screen.close();
         System.exit(0);
-    };
+    }
 
     private static class MemoryTracker {
         public static void getMemoryTracking(Label memoryLabel) throws InterruptedException {
@@ -459,7 +418,7 @@ public class TDM {
                 }
         }
     }
-    private static void openFileDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, WindowBasedTextGUI gui) throws SQLException, CsvValidationException, IOException, InterruptedException {
+    private static void openFileDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, MultiWindowTextGUI gui) throws SQLException, CsvValidationException, IOException, InterruptedException {
         //todo use the index for recent imports list
         String input = String.valueOf(new FileDialogBuilder()
                 .setTitle("Import File")
@@ -555,22 +514,13 @@ public class TDM {
 
 
         }
+        else {
+            return;
+        }
     }
 
 
     public static TableModel<String> updateTable(String FILENAME) throws SQLException {
-        //Table<String> tableData = new Table<>();
-//        try (Connection conn = DriverManager.getConnection(getDatabaseURL());
-//             Statement stmt = conn.createStatement();
-//             ResultSet rs = stmt.executeQuery("SELECT name FROM sqlite_master WHERE type='table';")) {
-//
-//            System.out.println("Tables in the database:");
-//            while (rs.next()) {
-//                System.out.println(rs.getString("name"));
-//            }
-//        } catch (SQLException e) {
-//            System.err.println("Error: " + e.getMessage());
-//        }
 
         Table<String> tableData;
         try (Connection conn = DriverManager.getConnection(getDatabaseURL());
@@ -602,7 +552,7 @@ public class TDM {
     public static void showFullPageScriptDialog(WindowBasedTextGUI gui, String title) {
 
         BasicWindow dialogWindow = new BasicWindow(title);
-        Panel panel = new Panel(new GridLayout(1));
+        Panel panel = new Panel(new GridLayout(4));
 
         TextBox textBox = new TextBox("import dev.noodle.*", TextBox.Style.MULTI_LINE)
                 .setLayoutData(GridLayout.createLayoutData(
@@ -613,18 +563,12 @@ public class TDM {
                 ))
                 .setVerticalFocusSwitching(true);
 
-
         panel.addComponent(textBox);
-
         //change mode with dropdown? for py and beanshell as well as actuall shell terminal
-
         // TODO process input with beanshell and add save ability to sqlite
 
-        // Submit button
-        final String[] result = {null};
         Button submitButton = new Button("Submit", () -> {
             Interpreter i = new Interpreter();
-            result[0] = textBox.getText();
             //textBox.getText();
             try {
                 Object BSHresult = i.eval(textBox.getText());
@@ -633,16 +577,22 @@ public class TDM {
                 showErrorDialog(gui, "Beanshell Script error", (e + "\n" +(e.getErrorText() +"\n")));
                 //throw new RuntimeException(e);
             }
-
 //TODO - add program and dependency classpath to beanshell http://beanshell.org/manual/bshmanual.html#Adding_BeanShell_Commands
 
-
         });
-        Button exitButton = new Button("Exit", () -> {
-            dialogWindow.close();
-        });
+        Button exitButton = new Button("Exit", dialogWindow::close);
+
+        Button saveButton = new Button("Save Script", () -> {
+            try {
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
 
 
+    });
+
+        panel.addComponent(saveButton);
         panel.addComponent(submitButton);
         panel.addComponent(exitButton);
         dialogWindow.setComponent(panel);

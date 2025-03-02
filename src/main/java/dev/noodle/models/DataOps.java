@@ -2,6 +2,7 @@ package dev.noodle.models;
 
 
 
+import com.googlecode.lanterna.gui2.table.Table;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
@@ -18,9 +19,8 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 
-import bsh.Interpreter;
 
-import static dev.noodle.TDM.table;
+import static dev.noodle.TDM.*;
 import static dev.noodle.models.CreateSQLiteDB.getJarDir;
 
 
@@ -29,67 +29,67 @@ public class DataOps {
 
 
     public static String getDatabaseURL() {
-        //URL resource = DataOps.class.getResource("/workingDb.db");
-
-//        if (resource == null) {
-//            //System.err.println("Could not find 'workingDb.sqlite' in resources folder!");
-//            String url = "jdbc:sqlite:" + getJarDir() + "/workingDb.db";
-//            try (Connection conn = DriverManager.getConnection(url)) {
-//                if (conn != null) {
-//                    System.out.println("A new database file has been created!");
-//                }
-//            } catch (SQLException e) {
-//                System.out.println(e.getMessage());
-//            }
-//        }
-
         String DBurl = "jdbc:sqlite:" + getJarDir() + "/workingDb.db";
         return DBurl;
     }
 
 
-//    public static void importTable(String FILENAME, String FILEPATH, List<String[]> rows) throws SQLException {
-//        //String url = "jdbc:sqlite:workingDb.sqlite";
-//        String url = getDatabaseURL();
-//
-//        StringBuilder sb = new StringBuilder();
-//        sb.append("CREATE TABLE IF NOT EXISTS [")
-//                .append(FILENAME)
-//                .append("] (")
-//                .append("id INTEGER PRIMARY KEY AUTOINCREMENT, ");
-//
-//        // TODO i can almost promise this will throw an error later
-//        String[] headers = rows.get(0);
-//
-//        for (int i = 0; i < headers.length; i++) {
-//            sb.append("\"").append(headers[i]).append("\"");
-//            sb.append(" TEXT");
-//            if (i < headers.length - 1) {
-//                sb.append(", ");
-//            }
-//        }
-//        sb.append(");");
-//
-//
-//        String createTableSQL = sb.toString();
-//        assert url != null;
-//        Connection conn = DriverManager.getConnection(url);
-//        // Create the table if it doesn't exist
-//        conn.createStatement().execute(createTableSQL);
-//        if (conn != null) {
-//            try {
-//                conn.close();
-//                System.out.println("Connection closed successfully.");
-//            } catch (SQLException e) {
-//                e.printStackTrace();
-//            }
-//        }
-//        //addRowsToTable(FILEPATH, rows);
-//
-//        appendFileToList(FILENAME, FILEPATH);
-//
-//
-//    }
+    public static void TabletoSQL(String FILENAME) throws SQLException {
+        Connection conn = DriverManager.getConnection(getDatabaseURL());
+        Statement stmt = conn.createStatement();
+        stmt.execute("DROP TABLE IF EXISTS" + FILENAME );
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("CREATE TABLE IF NOT EXISTS [")
+                .append(FILENAME)
+                .append("] (")
+                .append("id INTEGER PRIMARY KEY AUTOINCREMENT, ");
+        //todo need to execute above sb statement *** after header names are added!!!!
+
+        int columnCount = table.getTableModel().getColumnCount();
+        int rowCount = table.getTableModel().getRowCount();
+
+        for (int i = 0; i < columnCount; i++) {
+//                if (isSQLKeyword(data[i])) {
+//                    data[i] = "SANITIZED_col"+ i ;
+//                }
+            sb.append("[").append(table.getTableModel().getColumnLabel(i)).append("]");
+            sb.append(" TEXT");
+            if (i < columnCount - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append(");");
+
+        stmt.execute(sb.toString());
+
+        // insert the data post creating and whatever you just did
+        for (int j = 0; j < rowCount; j++) {
+            StringBuilder insertSQL = new StringBuilder("INSERT INTO " + FILENAME + " (");
+            //header names
+            // start at 1 to avoid the ID column as that will be included anyway and will probably cause SQL exceptions
+            for (int i = 1; i < columnCount; i++) {
+                insertSQL.append(table.getTableModel().getColumnLabel(i));
+                if (i < columnCount - 1) {
+                    insertSQL.append(" ,");
+                }
+            }
+            insertSQL.append(")");
+
+            //values
+            insertSQL.append(" VALUES (");
+            for (int i = 1; i < columnCount; i++) {
+                insertSQL.append(getTableCell(i , j));
+                if (i < columnCount - 1) {
+                    insertSQL.append(" ,");
+                }
+            }
+            insertSQL.append(")");
+            stmt.execute(insertSQL.toString());
+        }
+
+        conn.close();
+    }
 
 
 
@@ -116,8 +116,6 @@ public class DataOps {
         }
         throw new IndexOutOfBoundsException("Row index out of range");
     }
-
-
 
 
     public static void appendFileToList(String FILENAME, String FILEPATH) throws SQLException {
@@ -147,24 +145,16 @@ public class DataOps {
         }
 
         conn.close();
-
-
     }
 
 
     public static void importCSV(String FILENAME, String FILEPATH) throws IOException, InterruptedException, CsvValidationException, SQLException {
-
         CSVReader reader = new CSVReader(new FileReader(FILEPATH));
         String[] data = reader.readNext(); // Read the first row (data)
-
-
         Connection conn = DriverManager.getConnection(getDatabaseURL());
         Statement stmt = conn.createStatement();
 
         stmt.execute("DROP TABLE IF EXISTS [" + FILENAME + "]");
-
-
-
 
             StringBuilder sb = new StringBuilder();
             sb.append("CREATE TABLE IF NOT EXISTS [")
@@ -188,7 +178,6 @@ public class DataOps {
             sb.append(");");
 
             stmt.execute(sb.toString());
-
 
             StringBuilder insertSQL = new StringBuilder("INSERT INTO [" + FILENAME + "] (");
             insertSQL.append(String.join(", ", data))
@@ -215,7 +204,7 @@ public class DataOps {
             }
             appendFileToList(FILENAME, FILEPATH);
         }
-        public static void exportCSVtoFile(String path) throws IOException, InterruptedException, CsvValidationException, SQLException {
+        public static void exportTabletoFile(String path) throws IOException, InterruptedException, CsvValidationException, SQLException {
             try (CSVWriter writer = new CSVWriter(new FileWriter(path))) {
                 int columnCount = table.getTableModel().getColumnCount();
                 int rowCount = table.getTableModel().getRowCount();
