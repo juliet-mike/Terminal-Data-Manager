@@ -15,12 +15,9 @@ import com.googlecode.lanterna.gui2.table.TableModel;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 
-
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 import dev.noodle.models.DataOps;
-
-
 
 import java.io.File;
 import java.io.FileWriter;
@@ -34,7 +31,6 @@ import java.util.List;
 import java.util.Objects;
 
 import static dev.noodle.models.DataOps.getDatabaseURL;
-
 
 
 public class TDM {
@@ -299,7 +295,6 @@ public class TDM {
                 }
             });
 
-
             leftSubPanel.addComponent(dataframeActionListBox.withBorder(Borders.singleLine()));
             //content for leftSubPanel ends here
 
@@ -318,7 +313,6 @@ public class TDM {
             for (int i = 0; i < 50; i++) {
                 table.getTableModel().addRow("1", "2", "3", "4", "5");
             }
-
 
             table.setCellSelection(true);
             table.setSelectAction(new Runnable() {
@@ -339,46 +333,21 @@ public class TDM {
                         //todo set user input to new cell value and write to db
                         //or check if there have been changes in x number of seconds then write?
                         table.getTableModel().setCell(selectedCol, selectedRow, result);
-                    } else {
-
-
                     }
                 }
             });
             // mid/center panel ends here
 
-//            Panel shellPanel = new Panel();
-//            Theme shellTheme = LanternaThemes.getRegisteredTheme("default");
-//            shellPanel.setTheme(shellTheme);
-//            shellPanel.setLayoutManager(new GridLayout(1));
-//            panel.addComponent(shellPanel.withBorder(Borders.singleLine()),BorderLayout.Location.BOTTOM);
-//            shellPanel.addComponent(new Label("Enter BeanShell Commands:"));
-//            TextBox outputBox = new TextBox(new TerminalSize(50, 5));
-//            shellPanel.addComponent(outputBox);
-//            outputBox.setReadOnly(true);
-//            //shellPanel.addComponent(new Label("CTRL B to activate input"));
-//            TextBox inputBox = new TextBox(new TerminalSize(50, 3));
-//            shellPanel.addComponent(inputBox);
-
-            // Toggle Listener State
-
-
-
             // Create the window to hold the panel (this is the actual window that appears on the screen)
             BasicWindow mainWindow = new BasicWindow("TDM v 0.01");
-
             // Set the window to be full-screen and expand its content
             mainWindow.setHints(Arrays.asList(Window.Hint.EXPANDED, Window.Hint.FIT_TERMINAL_WINDOW));
-
             // Add the panel to the window
             mainWindow.setComponent(panel);
-
             // Add the main window to the GUI and wait for user interaction
             gui.addWindowAndWait(mainWindow);
-
             // Stop the screen once the GUI has exited
             screen.stopScreen();
-
         }
          finally {
             if(screen != null) {
@@ -394,9 +363,6 @@ public class TDM {
             }
         }
     }
-
-
-
 
     private static void shutDown(Screen screen) throws IOException {
         System.out.println("Shutting down TDM");
@@ -454,24 +420,22 @@ public class TDM {
         }
     }
     private static void openSaveDialog( WindowBasedTextGUI gui) {
-        //todo ask user what they want to name the file first
-        //todo also figure out how to use opencsv to save back to csv and read from db
-
         String result = new TextInputDialogBuilder()
                 .setTitle("Save File as CSV")
                 .setDescription("please input a filename")
                 .build()
                 .showDialog(gui);
 
-        String filename = "TDump.csv";
-        if (result != null) {
-            if (result.contains(".csv")) {
-                filename = result;
-            }
-            else {
+        String filename = "";
+        if (result == null) {
+            return;
+        }
+        if (!Objects.equals(result, "null/")) {
+            if (!result.contains(".csv")) {
                 filename = result + ".csv";
-                //System.out.println(filename);
             }
+        } else {
+            filename = "TDump.csv";
         }
 
         String directory = String.valueOf(new DirectoryDialogBuilder()
@@ -494,7 +458,6 @@ public class TDM {
                     headers[col] = table.getTableModel().getColumnLabel(col);
                 }
                 writer.writeNext(headers);
-
                 // Write table data
                 for (int row = 0; row < rowCount; row++) {
                     List<String> rowData = new ArrayList<>();
@@ -508,25 +471,19 @@ public class TDM {
                 showErrorDialog(gui, "File Save Error", String.valueOf((e)));
                 //e.printStackTrace();
             }
-
-
         }
         else {
             return;
         }
     }
 
-
     public static TableModel<String> updateTableFromSQL(String FILENAME) throws SQLException {
         Table<String> tableData;
         try (Connection conn = DriverManager.getConnection(getDatabaseURL());
              Statement stmt = conn.createStatement();
              ResultSet rs = stmt.executeQuery("SELECT * FROM " + "[" +FILENAME+"]" )) {
-
             ResultSetMetaData metaData = rs.getMetaData();
             int columnCount = metaData.getColumnCount();
-
-
 
             // Add headers as the first row
             String[] headers = new String[columnCount];
@@ -545,6 +502,7 @@ public class TDM {
         }
         return tableData.getTableModel();
     }
+
     public static void showFullPageScriptDialog(WindowBasedTextGUI gui, String title) {
 
         BasicWindow dialogWindow = new BasicWindow(title);
@@ -584,8 +542,6 @@ public class TDM {
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
-
-
     });
 
         panel.addComponent(saveButton);
@@ -604,7 +560,6 @@ public class TDM {
                 MessageDialogButton.OK
         );
     }
-
 
 }
 

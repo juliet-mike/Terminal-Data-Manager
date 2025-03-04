@@ -1,0 +1,1 @@
+java -cp "target/TDM-0.1-SNAPSHOT.jar:target/lib/*" dev.noodle.TDM

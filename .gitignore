@@ -1,7 +1,10 @@
 
 doc/
 target/
-#out/
+out/
+.tmp.drivedownload/*
+.tmp.driveupload/*
+
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
@@ -15,7 +18,7 @@ target/
 *.iml
 *.ipr
 .idea/
-.venv/
+.venv/*
 
 ### Eclipse ###
 .apt_generated
