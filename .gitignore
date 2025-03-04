@@ -1,6 +1,6 @@
 
 doc/
-target/
+#target/
 out/
 .tmp.drivedownload/*
 .tmp.driveupload/*
@@ -59,7 +59,7 @@ build/
 .mtj.tmp/
 
 # Package Files #
-*.jar
+#*.jar
 *.war
 *.nar
 *.ear
@@ -73,3 +73,7 @@ replay_pid*
 
 /.idea/
 /.venv/
+/target/maven-status/
+/target/maven-archiver/
+/target/generated-sources/
+/target/classes/
