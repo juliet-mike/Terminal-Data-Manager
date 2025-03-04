@@ -35,7 +35,6 @@ import static dev.noodle.models.DataOps.getDatabaseURL;
 
 public class TDM {
 
-
     public static Table<String> table = new Table<>( "1", "2", "3", "4", "5");
     public static Path selectedFileNames = Path.of("default"); //= new Path;
     public static Path selectedFilePaths = Path.of("default"); //= new Path;
@@ -44,11 +43,9 @@ public class TDM {
     public static Table<String> getTable() {
         return table;
     }
-
     public static List<String> getTablerow(int row) {
         return table.getTableModel().getRow(row);
     }
-
     public static List<String> getTableColumn(int column) {
         List<String> columnData = new ArrayList<>();
         TableModel<String> model = table.getTableModel();
@@ -57,18 +54,15 @@ public class TDM {
         }
         return columnData;
     }
-
     public static String getTableCell(int column, int row) {
         return table.getTableModel().getCell(column, row);
     }
-
 
     public static void main(String[] args) throws IOException {
         Theme theme = LanternaThemes.getRegisteredTheme("bigsnake");
 
         DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
         Screen screen = null;
-
         try {
             screen = terminalFactory.createScreen();
             screen.startScreen();
@@ -81,8 +75,6 @@ public class TDM {
             MultiWindowTextGUI gui = new MultiWindowTextGUI(screen, new DefaultWindowManager(), new EmptySpace(TextColor.ANSI.BLUE));
             gui.setTheme(theme);
 
-
-
             Panel topSubPanel = new Panel();
             panel.addComponent(topSubPanel.withBorder(Borders.doubleLineBevel()), BorderLayout.Location.TOP);
             topSubPanel.setLayoutManager(new GridLayout(6));
@@ -91,25 +83,9 @@ public class TDM {
             MenuBar menubar = new MenuBar();
             topSubPanel.addComponent(menubar);
 
-            // array because I want to have a recent file list implemented soon that or a list of files that can be selected to bring into view
-//            Path selectedFileNames = null; //= new Path;
-//            Path selectedFilePaths = null; //= new Path;
-
-            // setup memory usage monitoring
             Label memoryLabel;
             topSubPanel.addComponent(memoryLabel = new Label("memory usage"), GridLayout.createHorizontallyEndAlignedLayoutData(3));
-            Thread memoryThread = new Thread(() -> {
-                try {
-                    MemoryTracker.getMemoryTracking(memoryLabel);
-                } catch (InterruptedException e) {
-                    //System.out.println("Memory tracker init failed");
-                    showErrorDialog(gui, "memory tracker init failed", "memory usage tracking failed please restart this program");
-                    throw new RuntimeException(e);
-                }
-            });
-            memoryThread.setDaemon(true);
-            memoryThread.start();
-
+            MemoryTracker.startMemoryTracker(memoryLabel);
 
             //shows active/ loading file -- interacted with by openFileDialog() method
             Label selectedFileLabel0;
@@ -121,7 +97,8 @@ public class TDM {
                 try {
                     openFileDialog( finalSelectedFileLabel, gui);
                 } catch (SQLException | CsvValidationException | IOException | InterruptedException e) {
-                    throw new RuntimeException(e);
+                    //throw new RuntimeException(e);
+                    showErrorDialog(gui, "Error Importing Table", e.getMessage());
                 }
             }));
 
@@ -134,7 +111,6 @@ public class TDM {
                     throw new RuntimeException(e);
                 }
             }));
-
             fileMenu.add(new MenuItem("Save As CSV", () -> openSaveDialog(gui)));
 
             Menu settingsMenu = new Menu("Settings");
@@ -150,11 +126,11 @@ public class TDM {
                     //finalScreen.close();
                     shutDown(finalScreen);
                 } catch (IOException e) {
-                    e.printStackTrace();
+                    showErrorDialog(gui, "ERROR", ("there was an error shutting down TDM" + e.getMessage()));
+                    //e.printStackTrace();
                 }
                 // Then exit the application.
             }));
-            //Menu openMenu = new Menu("Save to internal memory");
             Menu helpMenu = new Menu("Help");
             Menu scriptMenu = new Menu("Scripts");
             scriptMenu.add(new MenuItem("Open Script Editor", () -> showFullPageScriptDialog(gui, "Script Editor")));
@@ -168,7 +144,6 @@ public class TDM {
             leftSubPanel.setLayoutManager(new LinearLayout(Direction.VERTICAL));
             panel.addComponent(leftSubPanel.withBorder(Borders.singleLine()), BorderLayout.Location.LEFT); // Place button at the bottom of the panel
             leftSubPanel.addComponent(new Label("Quick Operations").setForegroundColor(TextColor.ANSI.BLUE)); // maybe move this to the panel title
-
 
             TerminalSize size = new TerminalSize(17, 20);
             ActionListBox dataframeActionListBox = new ActionListBox(size);
@@ -350,16 +325,14 @@ public class TDM {
             screen.stopScreen();
         }
          finally {
+            MemoryTracker.stopMemoryTracker();
             if(screen != null) {
-                try {
                     /*
                     The close() call here will restore the terminal by exiting from private mode which was done in
                     the call to startScreen(), and also restore things like echo mode
                      */
                     screen.close();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
+
             }
         }
     }
@@ -370,21 +343,7 @@ public class TDM {
         System.exit(0);
     }
 
-    private static class MemoryTracker {
-        public static void getMemoryTracking(Label memoryLabel) throws InterruptedException {
-                while (true) {
-                        int mb = 1024 * 1024;
-                        Runtime instance = Runtime.getRuntime();
-                        long totalMemory = instance.totalMemory();
-                        long freeMemory = instance.freeMemory();
-                        long usedMemory = totalMemory - freeMemory;
-                        // Ensure UI updates happen on the UI thread
-                        memoryLabel.setText("Memory: " + (usedMemory / mb + " MiB"));
-                        Thread.sleep(5000);
-                }
-        }
-    }
-    private static void openFileDialog( Label selectedFileLabels, MultiWindowTextGUI gui) throws SQLException, CsvValidationException, IOException, InterruptedException {
+    public static void openFileDialog( Label selectedFileLabels, MultiWindowTextGUI gui) throws SQLException, CsvValidationException, IOException, InterruptedException {
         //todo use the index for recent imports list
         String input = String.valueOf(new FileDialogBuilder()
                 .setTitle("Import File")
@@ -419,7 +378,7 @@ public class TDM {
                 }
         }
     }
-    private static void openSaveDialog( WindowBasedTextGUI gui) {
+    public static void openSaveDialog( WindowBasedTextGUI gui) {
         String result = new TextInputDialogBuilder()
                 .setTitle("Save File as CSV")
                 .setDescription("please input a filename")
@@ -427,12 +386,10 @@ public class TDM {
                 .showDialog(gui);
 
         String filename = "";
-        if (result == null) {
-            return;
-        }
+        if (result == null) {return;}
         if (!Objects.equals(result, "null/")) {
             if (!result.contains(".csv")) {
-                filename = result + ".csv";
+            filename = result + ".csv";
             }
         } else {
             filename = "TDump.csv";
@@ -472,9 +429,6 @@ public class TDM {
                 //e.printStackTrace();
             }
         }
-        else {
-            return;
-        }
     }
 
     public static TableModel<String> updateTableFromSQL(String FILENAME) throws SQLException {
@@ -504,7 +458,6 @@ public class TDM {
     }
 
     public static void showFullPageScriptDialog(WindowBasedTextGUI gui, String title) {
-
         BasicWindow dialogWindow = new BasicWindow(title);
         Panel panel = new Panel(new GridLayout(4));
 
@@ -560,6 +513,45 @@ public class TDM {
                 MessageDialogButton.OK
         );
     }
-
+   public static class MemoryTracker {
+        private static boolean memTracking = false;
+        public static void startMemoryTracker(Label memoryLabel) {
+            memTracking = true;
+            Thread memoryThread = new Thread(() -> {
+                while (memTracking) {
+                    try {
+                        displayCurrentMemoryUsage(memoryLabel);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+            memoryThread.setDaemon(true);
+            memoryThread.start();
+        }
+        public static void stopMemoryTracker() {
+            memTracking = false;
+        }
+        private static void displayCurrentMemoryUsage(Label memoryLabel) throws InterruptedException {
+                memoryLabel.setText("Memory: " + getUsedMemory() +  " MiB");
+                Thread.sleep(5000);
+        }
+        public static int getUsedMemory() {
+            int mb = 1024 * 1024;
+            Runtime instance = Runtime.getRuntime();
+            long totalMemory = instance.totalMemory();
+            long freeMemory = instance.freeMemory();
+            long usedMemory = totalMemory - freeMemory;
+            return (int) (usedMemory / mb);
+        }
+        public static float getUsedMemoryPercent() {
+            Runtime instance = Runtime.getRuntime();
+            long totalMemory = instance.totalMemory();
+            long freeMemory = instance.freeMemory();
+            long usedMemory = totalMemory - freeMemory;
+            return ((float) usedMemory / totalMemory) * 100;
+        }
+    }
 }
+
 
