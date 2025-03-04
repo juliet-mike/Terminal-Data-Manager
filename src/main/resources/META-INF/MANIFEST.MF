@@ -1,3 +1,15 @@
 Manifest-Version: 1.0
 Main-Class: dev.noodle.TDM
+Class-Path: commons-lang3-3.17.0.jar regex-24.1.2.jar commons-beanutils-
+ 1.10.0.jar commons-collections4-4.4.jar bsh-3.0.0-SNAPSHOT.jar commons-
+ text-1.13.0.jar json-24.1.2.jar llvm-api-24.1.2.jar truffle-enterprise-
+ 24.1.2.jar lanterna-3.1.3.jar commons-logging-1.3.4.jar profiler-tool-2
+ 4.1.2.jar truffle-api-24.1.2.jar jniutils-24.1.2.jar commons-collection
+ s-3.2.2.jar bcprov-jdk18on-1.78.1.jar python-embedding-24.1.2.jar slf4j
+ -api-2.0.16.jar collections-24.1.2.jar opencsv-5.10.jar truffle-nfi-24.
+ 1.2.jar truffle-nfi-libffi-24.1.2.jar word-24.1.2.jar python-resources-
+ 24.1.2.jar python-language-24.1.2.jar truffle-runtime-24.1.2.jar bcpkix
+ -jdk18on-1.78.1.jar sqlite-jdbc-3.49.0.0.jar bcutil-jdk18on-1.78.1.jar 
+ nativebridge-24.1.2.jar truffle-compiler-24.1.2.jar icu4j-24.1.2.jar po
+ lyglot-24.1.2.jar xz-24.1.2.jar nativeimage-24.1.2.jar
 

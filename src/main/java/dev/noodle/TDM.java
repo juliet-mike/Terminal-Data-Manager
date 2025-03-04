@@ -41,17 +41,18 @@ public class TDM {
 
 
     public static Table<String> table = new Table<>( "1", "2", "3", "4", "5");
-    // should this be its own class? or have a method encasing all of these in TDM????
+    public static Path selectedFileNames = Path.of("default"); //= new Path;
+    public static Path selectedFilePaths = Path.of("default"); //= new Path;
+
+    // should this be its own class?
     public static Table<String> getTable() {
         return table;
     }
-    public static String getTablecell(int x, int y) {
-        return table.getTableModel().getCell(x, y);
-    }
+
     public static List<String> getTablerow(int row) {
-        List<String> rowData = table.getTableModel().getRow(row);
-        return rowData;
+        return table.getTableModel().getRow(row);
     }
+
     public static List<String> getTableColumn(int column) {
         List<String> columnData = new ArrayList<>();
         TableModel<String> model = table.getTableModel();
@@ -60,6 +61,7 @@ public class TDM {
         }
         return columnData;
     }
+
     public static String getTableCell(int column, int row) {
         return table.getTableModel().getCell(column, row);
     }
@@ -94,8 +96,8 @@ public class TDM {
             topSubPanel.addComponent(menubar);
 
             // array because I want to have a recent file list implemented soon that or a list of files that can be selected to bring into view
-            Path[] selectedFileNames = new Path[5];
-            Path[] selectedFilePaths = new Path[5];
+//            Path selectedFileNames = null; //= new Path;
+//            Path selectedFilePaths = null; //= new Path;
 
             // setup memory usage monitoring
             Label memoryLabel;
@@ -104,7 +106,8 @@ public class TDM {
                 try {
                     MemoryTracker.getMemoryTracking(memoryLabel);
                 } catch (InterruptedException e) {
-                    System.out.println("Memory tracker init failed");
+                    //System.out.println("Memory tracker init failed");
+                    showErrorDialog(gui, "memory tracker init failed", "memory usage tracking failed please restart this program");
                     throw new RuntimeException(e);
                 }
             });
@@ -116,12 +119,11 @@ public class TDM {
             Label selectedFileLabel0;
             topSubPanel.addComponent(selectedFileLabel0 = new Label("Select a file"), GridLayout.createHorizontallyEndAlignedLayoutData(4));
 
-
             Menu fileMenu = new Menu("File");
             Label finalSelectedFileLabel = selectedFileLabel0;
             fileMenu.add(new MenuItem("Import New File", () -> {
                 try {
-                    openFileDialog(0, finalSelectedFileLabel, selectedFilePaths, selectedFileNames, gui);
+                    openFileDialog( finalSelectedFileLabel, gui);
                 } catch (SQLException | CsvValidationException | IOException | InterruptedException e) {
                     throw new RuntimeException(e);
                 }
@@ -130,7 +132,7 @@ public class TDM {
             //new method - open PATH dialog after having a user input popup
             fileMenu.add(new MenuItem("Save to Internal Memory", () -> {
                 try {
-                    DataOps.TabletoSQL(Arrays.toString(selectedFileNames));
+                    DataOps.TabletoSQL(selectedFileNames.toString(), table);
                 } catch (SQLException e) {
                     showErrorDialog(gui, "ERROR", "there was an error saving the current table \n check to make sure you have no SQL strings in the table");
                     throw new RuntimeException(e);
@@ -138,8 +140,6 @@ public class TDM {
             }));
 
             fileMenu.add(new MenuItem("Save As CSV", () -> openSaveDialog(gui)));
-
-
 
             Menu settingsMenu = new Menu("Settings");
 
@@ -418,7 +418,7 @@ public class TDM {
                 }
         }
     }
-    private static void openFileDialog(int index, Label selectedFileLabels, Path[] selectedFilePaths, Path[] selectedFileNames, MultiWindowTextGUI gui) throws SQLException, CsvValidationException, IOException, InterruptedException {
+    private static void openFileDialog( Label selectedFileLabels, MultiWindowTextGUI gui) throws SQLException, CsvValidationException, IOException, InterruptedException {
         //todo use the index for recent imports list
         String input = String.valueOf(new FileDialogBuilder()
                 .setTitle("Import File")
@@ -429,15 +429,12 @@ public class TDM {
 
         if (!Objects.equals(input, "null")) {
             Path path = Paths.get(input);
-            selectedFilePaths[index] = path.toAbsolutePath();
-            selectedFileNames[index] = path.getFileName();
-            selectedFileLabels.setText(String.valueOf(selectedFileNames[index]));
-            //System.out.println("Selected file: " + selectedFileNames[index]);
-            //System.out.println("Selected path: " + selectedFilePaths[index]);
-            //updateTable(String.valueOf(selectedFileNames[index]));
+            selectedFilePaths = path.toAbsolutePath();
+            selectedFileNames = path.getFileName();
+            selectedFileLabels.setText(String.valueOf(selectedFileNames));
 
                 try {
-                    DataOps.importCSV(String.valueOf(selectedFileNames[index]), String.valueOf(selectedFilePaths[index]));
+                    DataOps.importCSV(String.valueOf(selectedFileNames), String.valueOf(selectedFilePaths));
                 } catch (IOException e) {
                     showErrorDialog(gui, "IO error", String.valueOf((e)));
                     //throw new RuntimeException(e);
@@ -449,7 +446,7 @@ public class TDM {
                     //throw new RuntimeException(e);
                 }
                 try {
-                    table.setTableModel(updateTable(String.valueOf(selectedFileNames[index])));
+                    table.setTableModel(updateTableFromSQL(String.valueOf(selectedFileNames)));
                 } catch (SQLException e) {
                     showErrorDialog(gui, "SQL Error", String.valueOf((e)));
                     //throw new RuntimeException(e);
@@ -520,8 +517,7 @@ public class TDM {
     }
 
 
-    public static TableModel<String> updateTable(String FILENAME) throws SQLException {
-
+    public static TableModel<String> updateTableFromSQL(String FILENAME) throws SQLException {
         Table<String> tableData;
         try (Connection conn = DriverManager.getConnection(getDatabaseURL());
              Statement stmt = conn.createStatement();
@@ -530,14 +526,14 @@ public class TDM {
             ResultSetMetaData metaData = rs.getMetaData();
             int columnCount = metaData.getColumnCount();
 
+
+
             // Add headers as the first row
             String[] headers = new String[columnCount];
             for (int i = 1; i <= columnCount; i++) {
                 headers[i - 1] = metaData.getColumnName(i);
             }
             tableData = new Table<>(headers);
-            //tableData.getTableModel().addRow(headers);
-
             // Add row data
             while (rs.next()) {
                 String[] row = new String[columnCount];
