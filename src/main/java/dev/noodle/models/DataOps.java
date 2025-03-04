@@ -1,15 +1,13 @@
 package dev.noodle.models;
 
 
-
 import com.googlecode.lanterna.gui2.table.Table;
+import com.googlecode.lanterna.gui2.table.TableModel;
 import com.opencsv.CSVReader;
-import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 
 import java.net.URLDecoder;
@@ -18,18 +16,12 @@ import java.sql.*;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
-
 
 import static dev.noodle.TDM.*;
 
 
-
-
 public class DataOps {
-
     public static String getJarDir() {
         String path = DataOps.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         String decodedPath;
@@ -47,7 +39,6 @@ public class DataOps {
         return DBurl;
     }
 
-
     public static void TabletoSQL(String FILENAME, Table<String> table) throws SQLException {
         Connection conn = DriverManager.getConnection(getDatabaseURL());
         Statement stmt = conn.createStatement();
@@ -57,7 +48,6 @@ public class DataOps {
         System.out.println("YOU HAVE ID IN THE #1 header");
         table.getTableModel().removeColumn(0);
         }
-
         StringBuilder sb = new StringBuilder();
         sb.append("CREATE TABLE IF NOT EXISTS [")
                 .append(FILENAME)
@@ -68,9 +58,6 @@ public class DataOps {
         int rowCount = table.getTableModel().getRowCount();
 
         for (int i = 0; i < columnCount; i++) {
-//                if (isSQLKeyword(data[i])) {
-//                    data[i] = "SANITIZED_col"+ i ;
-//                }
             sb.append("[").append(table.getTableModel().getColumnLabel(i)).append("]");
             sb.append(" TEXT");
             if (i < columnCount - 1) {
@@ -111,7 +98,6 @@ public class DataOps {
 
     public static void appendFileToList(String FILENAME, String FILEPATH) throws SQLException {
         Connection conn = DriverManager.getConnection(getDatabaseURL());
-
         String createTableSQL =
                 "CREATE TABLE IF NOT EXISTS FileList (" +
                         "  id INTEGER PRIMARY KEY AUTOINCREMENT, " +  // SQLite syntax
@@ -152,21 +138,17 @@ public class DataOps {
                     .append("] (")
                     .append("ID INTEGER PRIMARY KEY AUTOINCREMENT, ");
 
-            // TODO i can almost promise this will throw an error later
-                    // lol it did cause SQL syntax thinks one of the headers is a SQL command ugh
-                    // and sanitizing refuses to work maybe because of how im stacking all these strings together?
-
             for (int i = 0; i < data.length; i++) {
-//                if (isSQLKeyword(data[i])) {
-//                    data[i] = "SANITIZED_col"+ i ;
-//                }
-                sb.append("[").append(data[i]).append("]");
+                sb.append("\"")
+                        .append(data[i])
+                        .append("\"");
                 sb.append(" TEXT");
                 if (i < data.length - 1) {
                     sb.append(", ");
                 }
             }
             sb.append(");");
+            System.out.println(sb);
             stmt.execute(sb.toString());
 
             StringBuilder insertSQL = new StringBuilder("INSERT INTO [" + FILENAME + "] (");
@@ -193,9 +175,32 @@ public class DataOps {
             }
             appendFileToList(FILENAME, FILEPATH);
         }
+    public static TableModel<String> updateTableFromSQL(String FILENAME) throws SQLException {
+        Table<String> tableData;
+        try (Connection conn = DriverManager.getConnection(getDatabaseURL());
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT * FROM " + "[" +FILENAME+"]" )) {
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
 
-
+            // Add headers as the first row
+            String[] headers = new String[columnCount];
+            for (int i = 1; i <= columnCount; i++) {
+                headers[i - 1] = metaData.getColumnName(i);
+            }
+            tableData = new Table<>(headers);
+            // Add row data
+            while (rs.next()) {
+                String[] row = new String[columnCount];
+                for (int i = 1; i <= columnCount; i++) {
+                    row[i - 1] = rs.getString(i);
+                }
+                tableData.getTableModel().addRow(row);
+            }
+        }
+        return tableData.getTableModel();
     }
+}
 
 
 

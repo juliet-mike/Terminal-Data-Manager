@@ -30,7 +30,8 @@ import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
 
-import static dev.noodle.models.DataOps.getDatabaseURL;
+
+import static dev.noodle.models.DataOps.updateTableFromSQL;
 
 
 public class TDM {
@@ -332,7 +333,6 @@ public class TDM {
                     the call to startScreen(), and also restore things like echo mode
                      */
                     screen.close();
-
             }
         }
     }
@@ -387,12 +387,12 @@ public class TDM {
 
         String filename = "";
         if (result == null) {return;}
-        if (!Objects.equals(result, "null/")) {
+        if (!Objects.equals(result, "")) {
             if (!result.contains(".csv")) {
             filename = result + ".csv";
             }
         } else {
-            filename = "TDump.csv";
+            filename = "TDM_dump.csv";
         }
 
         String directory = String.valueOf(new DirectoryDialogBuilder()
@@ -403,23 +403,29 @@ public class TDM {
                 .showDialog(gui));
 
         if (directory != null) {
+            Table<String> copiedTable = table;
+            if (Objects.equals(copiedTable.getTableModel().getColumnLabel(1), "ID"));
+            {
+                copiedTable.getTableModel().removeColumn(1);
+            }
+
             String path = directory + File.separator + filename;
             //selectedFilePaths[index] = path.toAbsolutePath();
             //System.out.println("Selected save path: " + selectedFilePaths[index]);
             try (CSVWriter writer = new CSVWriter(new FileWriter(path))) {
-                int columnCount = table.getTableModel().getColumnCount();
-                int rowCount = table.getTableModel().getRowCount();
+                int columnCount = copiedTable.getTableModel().getColumnCount();
+                int rowCount = copiedTable.getTableModel().getRowCount();
 
                 String[] headers = new String[columnCount];
                 for (int col = 0; col < columnCount; col++) {
-                    headers[col] = table.getTableModel().getColumnLabel(col);
+                    headers[col] = copiedTable.getTableModel().getColumnLabel(col);
                 }
                 writer.writeNext(headers);
                 // Write table data
                 for (int row = 0; row < rowCount; row++) {
                     List<String> rowData = new ArrayList<>();
                     for (int col = 0; col < columnCount; col++) {
-                        rowData.add(table.getTableModel().getCell(col, row));
+                        rowData.add(copiedTable.getTableModel().getCell(col, row));
                     }
                     writer.writeNext(rowData.toArray(new String[0]));
                 }
@@ -431,31 +437,6 @@ public class TDM {
         }
     }
 
-    public static TableModel<String> updateTableFromSQL(String FILENAME) throws SQLException {
-        Table<String> tableData;
-        try (Connection conn = DriverManager.getConnection(getDatabaseURL());
-             Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT * FROM " + "[" +FILENAME+"]" )) {
-            ResultSetMetaData metaData = rs.getMetaData();
-            int columnCount = metaData.getColumnCount();
-
-            // Add headers as the first row
-            String[] headers = new String[columnCount];
-            for (int i = 1; i <= columnCount; i++) {
-                headers[i - 1] = metaData.getColumnName(i);
-            }
-            tableData = new Table<>(headers);
-            // Add row data
-            while (rs.next()) {
-                String[] row = new String[columnCount];
-                for (int i = 1; i <= columnCount; i++) {
-                    row[i - 1] = rs.getString(i);
-                }
-                tableData.getTableModel().addRow(row);
-            }
-        }
-        return tableData.getTableModel();
-    }
 
     public static void showFullPageScriptDialog(WindowBasedTextGUI gui, String title) {
         BasicWindow dialogWindow = new BasicWindow(title);
@@ -472,7 +453,7 @@ public class TDM {
 
         panel.addComponent(textBox);
         //change mode with dropdown? for py and beanshell as well as actuall shell terminal
-        // TODO process input with beanshell and add save ability to sqlite
+        // TODO add script save ability to sqlite
 
         Button submitButton = new Button("Submit", () -> {
             Interpreter i = new Interpreter();
@@ -485,7 +466,6 @@ public class TDM {
                 //throw new RuntimeException(e);
             }
 //TODO - add program and dependency classpath to beanshell http://beanshell.org/manual/bshmanual.html#Adding_BeanShell_Commands
-
         });
         Button exitButton = new Button("Exit", dialogWindow::close);
 
@@ -496,7 +476,6 @@ public class TDM {
                 throw new RuntimeException(e);
             }
     });
-
         panel.addComponent(saveButton);
         panel.addComponent(submitButton);
         panel.addComponent(exitButton);
