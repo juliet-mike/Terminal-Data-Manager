@@ -17,7 +17,8 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
-import dev.noodle.models.DataOps;
+import dev.noodle.modules.DataOps;
+import dev.noodle.modules.quickOps;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -31,7 +32,8 @@ import java.util.List;
 import java.util.Objects;
 
 
-import static dev.noodle.models.DataOps.updateTableFromSQL;
+import static dev.noodle.modules.DataOps.CustomUpdateTableFromSQL;
+import static dev.noodle.modules.DataOps.updateTableFromSQL;
 
 
 public class TDM {
@@ -149,16 +151,22 @@ public class TDM {
             TerminalSize size = new TerminalSize(17, 20);
             ActionListBox dataframeActionListBox = new ActionListBox(size);
 
-            dataframeActionListBox.addItem("Quick CAL", new Runnable() {
+//            dataframeActionListBox.addItem("Quick CAL", new Runnable() {
+//                @Override
+//                public void run() {
+//                    // Code to run when action activated
+//                }
+//            });
+            dataframeActionListBox.addItem("Custom SQL", new Runnable() {
                 @Override
-                public void run() {
-                    // Code to run when action activated
+                public void run() {quickOps.customSQL(gui);
                 }
             });
             dataframeActionListBox.addItem("Add", new Runnable() {
                 @Override
                 public void run() {
                     // Code to run when action activated
+
                 }
             });
             dataframeActionListBox.addItem("Subtract", new Runnable() {
@@ -208,6 +216,7 @@ public class TDM {
                 @Override
                 public void run() {
                     // Code to run when action activated
+
                 }
             });
             dataframeActionListBox.addItem("Rename Column", new Runnable() {
@@ -437,7 +446,6 @@ public class TDM {
         }
     }
 
-
     public static void showFullPageScriptDialog(WindowBasedTextGUI gui, String title) {
         BasicWindow dialogWindow = new BasicWindow(title);
         Panel panel = new Panel(new GridLayout(4));
@@ -481,9 +489,9 @@ public class TDM {
         panel.addComponent(exitButton);
         dialogWindow.setComponent(panel);
         dialogWindow.setHints(List.of(Window.Hint.FULL_SCREEN)); // Make it full-page
-
         gui.addWindowAndWait(dialogWindow);
     }
+
     public static void showErrorDialog(WindowBasedTextGUI textGUI, String title, String message) {
         MessageDialog.showMessageDialog(
                 textGUI,
@@ -532,5 +540,8 @@ public class TDM {
         }
     }
 }
+
+
+
 
 

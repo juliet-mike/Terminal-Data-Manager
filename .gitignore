@@ -77,3 +77,4 @@ replay_pid*
 /target/maven-archiver/
 /target/generated-sources/
 /target/classes/
+/target/workingDb.db
