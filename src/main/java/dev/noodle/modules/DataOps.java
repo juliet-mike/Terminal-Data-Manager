@@ -5,6 +5,9 @@ import com.googlecode.lanterna.gui2.table.Table;
 import com.googlecode.lanterna.gui2.table.TableModel;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.spi.SLF4JServiceProvider;
 
 import java.io.File;
 import java.io.FileReader;
@@ -22,6 +25,8 @@ import static dev.noodle.TDM.*;
 
 
 public class DataOps {
+    private static final Logger log = LoggerFactory.getLogger(DataOps.class);
+
     public static String getJarDir() {
         String path = DataOps.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         String decodedPath;
@@ -67,6 +72,7 @@ public class DataOps {
         sb.append(");");
         //System.out.println(sb);
         stmt.execute(sb.toString());
+        //log.info(sb.toString());
 
         // insert the data post creating and whatever you just did
         for (int j = 0; j < rowCount; j++) {
@@ -74,7 +80,8 @@ public class DataOps {
             //header names
             // start at 1 to avoid the ID column as that will be included anyway and will probably cause SQL exceptions
             for (int i = 0; i < columnCount; i++) {
-                insertSQL.append(table.getTableModel().getColumnLabel(i));
+                insertSQL.append("[").append(table.getTableModel().getColumnLabel(i)).append("]");
+                //insertSQL.append(table.getTableModel().getColumnLabel(i));
                 if (i < columnCount - 1) {
                     insertSQL.append(" ,");
                 }
@@ -91,6 +98,7 @@ public class DataOps {
             insertSQL.append(")");
             //System.out.println(insertSQL);
             stmt.execute(String.valueOf(insertSQL));
+            //log.info(String.valueOf(insertSQL));
         }
         conn.close();
     }
@@ -148,7 +156,7 @@ public class DataOps {
                 }
             }
             sb.append(");");
-            System.out.println(sb);
+            //System.out.println(sb);
             stmt.execute(sb.toString());
 
             StringBuilder insertSQL = new StringBuilder("INSERT INTO [" + FILENAME + "] (");

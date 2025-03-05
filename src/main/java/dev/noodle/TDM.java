@@ -20,6 +20,7 @@ import com.opencsv.exceptions.CsvValidationException;
 import dev.noodle.modules.DataOps;
 import dev.noodle.modules.quickOps;
 
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -32,8 +33,8 @@ import java.util.List;
 import java.util.Objects;
 
 
-import static dev.noodle.modules.DataOps.CustomUpdateTableFromSQL;
 import static dev.noodle.modules.DataOps.updateTableFromSQL;
+import static dev.noodle.modules.quickOps.*;
 
 
 public class TDM {
@@ -60,8 +61,12 @@ public class TDM {
     public static String getTableCell(int column, int row) {
         return table.getTableModel().getCell(column, row);
     }
+    public static MultiWindowTextGUI globalGui;
+
 
     public static void main(String[] args) throws IOException {
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "off");
+
         Theme theme = LanternaThemes.getRegisteredTheme("bigsnake");
 
         DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
@@ -77,6 +82,7 @@ public class TDM {
             // Create a GUI manager and set the screen for the window
             MultiWindowTextGUI gui = new MultiWindowTextGUI(screen, new DefaultWindowManager(), new EmptySpace(TextColor.ANSI.BLUE));
             gui.setTheme(theme);
+            globalGui = gui;
 
             Panel topSubPanel = new Panel();
             panel.addComponent(topSubPanel.withBorder(Borders.doubleLineBevel()), BorderLayout.Location.TOP);
@@ -101,7 +107,7 @@ public class TDM {
                     openFileDialog( finalSelectedFileLabel, gui);
                 } catch (SQLException | CsvValidationException | IOException | InterruptedException e) {
                     //throw new RuntimeException(e);
-                    showErrorDialog(gui, "Error Importing Table", e.getMessage());
+                    showErrorDialog( "Error Importing Table", e.getMessage());
                 }
             }));
 
@@ -110,11 +116,11 @@ public class TDM {
                 try {
                     DataOps.TabletoSQL(selectedFileNames.toString(), table);
                 } catch (SQLException e) {
-                    showErrorDialog(gui, "ERROR", "there was an error saving the current table \n check to make sure you have no SQL strings in the table");
-                    throw new RuntimeException(e);
+                    showErrorDialog( "ERROR", "there was an error saving the current table \n check to make sure you have no SQL strings in the table");
+                    //throw new RuntimeException(e);
                 }
             }));
-            fileMenu.add(new MenuItem("Save As CSV", () -> openSaveDialog(gui)));
+            fileMenu.add(new MenuItem("Save As CSV", () -> openSaveDialog()));
 
             Menu settingsMenu = new Menu("Settings");
 
@@ -129,14 +135,14 @@ public class TDM {
                     //finalScreen.close();
                     shutDown(finalScreen);
                 } catch (IOException e) {
-                    showErrorDialog(gui, "ERROR", ("there was an error shutting down TDM" + e.getMessage()));
+                    showErrorDialog("ERROR", ("there was an error shutting down TDM" + e.getMessage()));
                     //e.printStackTrace();
                 }
                 // Then exit the application.
             }));
             Menu helpMenu = new Menu("Help");
             Menu scriptMenu = new Menu("Scripts");
-            scriptMenu.add(new MenuItem("Open Script Editor", () -> showFullPageScriptDialog(gui, "Script Editor")));
+            scriptMenu.add(new MenuItem("Open Script Editor", () -> showFullPageScriptDialog( "Script Editor")));
 
             // add above objects to menu object
             menubar.add(fileMenu).add(scriptMenu).add(helpMenu); //.add(openMenu);
@@ -157,9 +163,11 @@ public class TDM {
 //                    // Code to run when action activated
 //                }
 //            });
+
             dataframeActionListBox.addItem("Custom SQL", new Runnable() {
                 @Override
-                public void run() {quickOps.customSQL(gui);
+                public void run() {
+                    quickOps.customSQLWindow();
                 }
             });
             dataframeActionListBox.addItem("Add", new Runnable() {
@@ -228,7 +236,7 @@ public class TDM {
             dataframeActionListBox.addItem("Merge Column", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+                    mergeColumn();
                 }
             });
             dataframeActionListBox.addItem("Merge Table", new Runnable() {
@@ -370,29 +378,29 @@ public class TDM {
                 try {
                     DataOps.importCSV(String.valueOf(selectedFileNames), String.valueOf(selectedFilePaths));
                 } catch (IOException e) {
-                    showErrorDialog(gui, "IO error", String.valueOf((e)));
+                    showErrorDialog( "IO error", String.valueOf((e)));
                     //throw new RuntimeException(e);
                 } catch (InterruptedException e) {
-                    showErrorDialog(gui, "Interrupted exception", String.valueOf((e)));
+                    showErrorDialog( "Interrupted exception", String.valueOf((e)));
                     //throw new RuntimeException(e);
                 } catch (SQLException e) {
-                    showErrorDialog(gui, "SQL Error", String.valueOf((e)));
+                    showErrorDialog( "SQL Error", String.valueOf((e)));
                     //throw new RuntimeException(e);
                 }
                 try {
                     table.setTableModel(updateTableFromSQL(String.valueOf(selectedFileNames)));
                 } catch (SQLException e) {
-                    showErrorDialog(gui, "SQL Error", String.valueOf((e)));
+                    showErrorDialog( "SQL Error", String.valueOf((e)));
                     //throw new RuntimeException(e);
                 }
         }
     }
-    public static void openSaveDialog( WindowBasedTextGUI gui) {
+    public static void openSaveDialog() {
         String result = new TextInputDialogBuilder()
                 .setTitle("Save File as CSV")
                 .setDescription("please input a filename")
                 .build()
-                .showDialog(gui);
+                .showDialog(globalGui);
 
         String filename = "";
         if (result == null) {return;}
@@ -409,7 +417,7 @@ public class TDM {
                 .setDescription("Choose a directory")
                 .setActionLabel("Select")
                 .build()
-                .showDialog(gui));
+                .showDialog(globalGui));
 
         if (directory != null) {
             Table<String> copiedTable = table;
@@ -440,13 +448,13 @@ public class TDM {
                 }
                 //System.out.println("CSV file saved at: " + path);
             } catch (IOException e) {
-                showErrorDialog(gui, "File Save Error", String.valueOf((e)));
+                showErrorDialog( "File Save Error", String.valueOf((e)));
                 //e.printStackTrace();
             }
         }
     }
 
-    public static void showFullPageScriptDialog(WindowBasedTextGUI gui, String title) {
+    public static void showFullPageScriptDialog(String title) {
         BasicWindow dialogWindow = new BasicWindow(title);
         Panel panel = new Panel(new GridLayout(4));
 
@@ -461,16 +469,15 @@ public class TDM {
 
         panel.addComponent(textBox);
         //change mode with dropdown? for py and beanshell as well as actuall shell terminal
-        // TODO add script save ability to sqlite
 
         Button submitButton = new Button("Submit", () -> {
             Interpreter i = new Interpreter();
             //textBox.getText();
             try {
                 Object BSHresult = i.eval(textBox.getText());
-                showErrorDialog(gui, "Beanshell Script result", String.valueOf((BSHresult)));
+                showErrorDialog( "Beanshell Script result", String.valueOf((BSHresult)));
             } catch (EvalError e) {
-                showErrorDialog(gui, "Beanshell Script error", (e + "\n" +(e.getErrorText() +"\n")));
+                showErrorDialog( "Beanshell Script error", (e + "\n" +(e.getErrorText() +"\n")));
                 //throw new RuntimeException(e);
             }
 //TODO - add program and dependency classpath to beanshell http://beanshell.org/manual/bshmanual.html#Adding_BeanShell_Commands
@@ -479,7 +486,7 @@ public class TDM {
 
         Button saveButton = new Button("Save Script", () -> {
             try {
-
+                // TODO add script save ability to sqlite
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }
@@ -489,12 +496,12 @@ public class TDM {
         panel.addComponent(exitButton);
         dialogWindow.setComponent(panel);
         dialogWindow.setHints(List.of(Window.Hint.FULL_SCREEN)); // Make it full-page
-        gui.addWindowAndWait(dialogWindow);
+        globalGui.addWindowAndWait(dialogWindow);
     }
 
-    public static void showErrorDialog(WindowBasedTextGUI textGUI, String title, String message) {
+    public static void showErrorDialog(String title, String message) {
         MessageDialog.showMessageDialog(
-                textGUI,
+                globalGui,
                 title,
                 message,
                 MessageDialogButton.OK

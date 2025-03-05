@@ -78,3 +78,5 @@ replay_pid*
 /target/generated-sources/
 /target/classes/
 /target/workingDb.db
+/.tmp.drivedownload/
+/.tmp.driveupload/
