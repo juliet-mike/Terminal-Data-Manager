@@ -1,13 +1,14 @@
 package dev.noodle.modules;
 
 
+import com.googlecode.lanterna.TerminalSize;
+import com.googlecode.lanterna.gui2.*;
 import com.googlecode.lanterna.gui2.table.Table;
 import com.googlecode.lanterna.gui2.table.TableModel;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.spi.SLF4JServiceProvider;
 
 import java.io.File;
 import java.io.FileReader;
@@ -144,25 +145,35 @@ public class DataOps {
             sb.append("CREATE TABLE IF NOT EXISTS [")
                     .append(FILENAME)
                     .append("] (")
-                    .append("ID INTEGER PRIMARY KEY AUTOINCREMENT, ");
-
+                    .append("TDM_ROW_ID INTEGER PRIMARY KEY AUTOINCREMENT, ");
+            // does it need brackets
             for (int i = 0; i < data.length; i++) {
-                sb.append("\"")
+                sb.append("[\"")
                         .append(data[i])
-                        .append("\"");
+                        .append("\"]");
                 sb.append(" TEXT");
                 if (i < data.length - 1) {
                     sb.append(", ");
                 }
             }
             sb.append(");");
-            //System.out.println(sb);
+            System.out.println(sb);
             stmt.execute(sb.toString());
 
             StringBuilder insertSQL = new StringBuilder("INSERT INTO [" + FILENAME + "] (");
-            insertSQL.append(String.join(", ", data))
-                    .append(") VALUES (");
+            //insertSQL.append(String.join(", ", data))
+            for (int i = 0; i < data.length; i++) {
+                //insertSQL.append("[\"").append(data[i]).append("\"]");
+                insertSQL.append("[\"")
+                        .append(data[i])
+                        .append("\"]");
+                if (i < data.length - 1) {
+                    insertSQL.append(", ");
+                }
+            }
+            insertSQL.append(") VALUES (");
             insertSQL.append("?,".repeat(data.length).substring(0, data.length * 2 - 1)).append(")");
+            System.out.println(insertSQL);
 
             try (PreparedStatement pstmt = conn.prepareStatement(insertSQL.toString())) {
                 String[] row;
@@ -183,7 +194,9 @@ public class DataOps {
             }
             appendFileToList(FILENAME, FILEPATH);
         }
-    public static TableModel<String> updateTableFromSQL(String FILENAME) throws SQLException {
+
+
+    public static TableModel<String> TableFromSQL(String FILENAME) throws SQLException {
         Table<String> tableData;
         try (Connection conn = DriverManager.getConnection(getDatabaseURL());
              Statement stmt = conn.createStatement();
@@ -207,6 +220,12 @@ public class DataOps {
             }
         }
         return tableData.getTableModel();
+    }
+
+    public static void setTableFromSQL(String FILENAME) throws SQLException {
+        Table<String> stringTable = table.setTableModel(TableFromSQL(FILENAME));
+        table.setTableModel(stringTable.getTableModel());
+
     }
 
     public static TableModel<String> CustomUpdateTableFromSQL(String query) throws SQLException {
@@ -234,6 +253,48 @@ public class DataOps {
         }
         return tableData.getTableModel();
     }
+    public static void opnRecentFileFromInternal() {
+        BasicWindow dialogWindow = new BasicWindow("open recent file");
+        Panel recentPanel = new Panel(new LinearLayout(Direction.VERTICAL));
+        TerminalSize size = new TerminalSize(50, 5);
+        RadioBoxList<quickOps.Option> selectionBox1 = new RadioBoxList<quickOps.Option>(size);
+        try (Connection conn = DriverManager.getConnection(getDatabaseURL());
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery("SELECT FILENAME FROM [FileList] ORDER BY ID DESC LIMIT 5;" )) {
+            //ResultSetMetaData metaData = rs.getMetaData();
+            recentPanel.addComponent(selectionBox1);
+            int column = 1; int index = 1;
+            while (rs.next()) {
+                selectionBox1.addItem((new quickOps.Option(index, rs.getString(column))));
+                index++;
+            }
+            recentPanel.addComponent(new Button("Submit", () -> {
+                quickOps.Option selectedOption1 = selectionBox1.getCheckedItem();
+                if (selectedOption1 != null) {
+                    String selectedFileName = selectedOption1.getName();
+                    try {
+                        table.setTableModel(TableFromSQL(selectedFileName));
+                    } catch (SQLException e) {
+                        showErrorDialog("SQL error", e.getMessage());
+                    }
+                    dialogWindow.close();
+                }
+            }));
+            Button exitButton = new Button("Exit", dialogWindow::close);
+            recentPanel.addComponent(exitButton);
+            dialogWindow.setComponent(recentPanel);
+            globalGui.addWindowAndWait(dialogWindow);
+
+        } catch (SQLException e) {
+            showErrorDialog("SQL error", e.getMessage());
+        }
+    }
+
+
+
+
+
+
 }
 
 

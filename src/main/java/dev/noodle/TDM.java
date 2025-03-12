@@ -1,6 +1,7 @@
 package dev.noodle;
 
 import bsh.*;
+import bsh.classpath.BshClassLoader;
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.bundle.LanternaThemes;
@@ -33,8 +34,10 @@ import java.util.List;
 import java.util.Objects;
 
 
-import static dev.noodle.modules.DataOps.updateTableFromSQL;
+import static dev.noodle.modules.DataOps.*;
 import static dev.noodle.modules.quickOps.*;
+
+
 
 
 public class TDM {
@@ -61,13 +64,24 @@ public class TDM {
     public static String getTableCell(int column, int row) {
         return table.getTableModel().getCell(column, row);
     }
+
+    // "hooks" for gui extensions
     public static MultiWindowTextGUI globalGui;
+    public static Panel globalFramePanel;
+    public static Panel globalTopSubPanel;
+    public static MenuBar globalMenuBar;
+        public static Menu globalFilelMenu;
+        public static Menu globalHelpMenu;
+        public static Menu globalScriptMenu;
+    public static Panel globalLeftSubPanel;
+    public static ActionListBox globalDataframeActionListBox;
+    public static Panel globalMidSubPanel;
 
 
     public static void main(String[] args) throws IOException {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "off");
 
-        Theme theme = LanternaThemes.getRegisteredTheme("bigsnake");
+
 
         DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
         Screen screen = null;
@@ -77,19 +91,23 @@ public class TDM {
 
             // Create a Panel to hold components (Buttons, Labels, TextBoxes, etc.)
             Panel panel = new Panel();
-            panel.setLayoutManager(new BorderLayout());  // Using BorderLayout to manage component positioning
+            globalFramePanel = panel;
+            panel.setLayoutManager(new BorderLayout());
 
+            Theme theme = LanternaThemes.getRegisteredTheme("bigsnake");
             // Create a GUI manager and set the screen for the window
             MultiWindowTextGUI gui = new MultiWindowTextGUI(screen, new DefaultWindowManager(), new EmptySpace(TextColor.ANSI.BLUE));
             gui.setTheme(theme);
             globalGui = gui;
 
             Panel topSubPanel = new Panel();
+            globalTopSubPanel = topSubPanel;
             panel.addComponent(topSubPanel.withBorder(Borders.doubleLineBevel()), BorderLayout.Location.TOP);
             topSubPanel.setLayoutManager(new GridLayout(6));
             topSubPanel.setTheme(theme);
 
             MenuBar menubar = new MenuBar();
+            globalMenuBar = menubar;
             topSubPanel.addComponent(menubar);
 
             Label memoryLabel;
@@ -101,6 +119,7 @@ public class TDM {
             topSubPanel.addComponent(selectedFileLabel0 = new Label("Select a file"), GridLayout.createHorizontallyEndAlignedLayoutData(4));
 
             Menu fileMenu = new Menu("File");
+            globalFilelMenu = fileMenu;
             Label finalSelectedFileLabel = selectedFileLabel0;
             fileMenu.add(new MenuItem("Import New File", () -> {
                 try {
@@ -110,6 +129,7 @@ public class TDM {
                     showErrorDialog( "Error Importing Table", e.getMessage());
                 }
             }));
+            fileMenu.add(new MenuItem("Open Recent", DataOps::opnRecentFileFromInternal));
 
             //new method - open PATH dialog after having a user input popup
             fileMenu.add(new MenuItem("Save to Internal Memory", () -> {
@@ -120,15 +140,13 @@ public class TDM {
                     //throw new RuntimeException(e);
                 }
             }));
-            fileMenu.add(new MenuItem("Save As CSV", () -> openSaveDialog()));
+            fileMenu.add(new MenuItem("Save As CSV", TDM::openSaveDialog));
+            //todo add user prefs and its menu
+            //Menu settingsMenu = new Menu("Settings");
+            //settingsMenu.add(new MenuItem("User Preferences", () -> System.out.println("User Preferences selected")));
+            //fileMenu.add(settingsMenu);
 
-            Menu settingsMenu = new Menu("Settings");
-
-            settingsMenu.add(new MenuItem("User Preferences", () -> System.out.println("User Preferences selected")));
-
-            fileMenu.add(settingsMenu);
-            Screen finalScreen = screen;
-
+            Screen finalScreen = screen; //why is this needed
             fileMenu.add(new MenuItem("Exit", () -> {
                 // First, close the screen.
                 try {
@@ -141,7 +159,9 @@ public class TDM {
                 // Then exit the application.
             }));
             Menu helpMenu = new Menu("Help");
+            globalHelpMenu = helpMenu;
             Menu scriptMenu = new Menu("Scripts");
+            globalScriptMenu = scriptMenu;
             scriptMenu.add(new MenuItem("Open Script Editor", () -> showFullPageScriptDialog( "Script Editor")));
 
             // add above objects to menu object
@@ -149,6 +169,7 @@ public class TDM {
 
             // init new panel
             Panel leftSubPanel = new Panel();
+            globalLeftSubPanel = leftSubPanel;
             leftSubPanel.setTheme(theme);
             leftSubPanel.setLayoutManager(new LinearLayout(Direction.VERTICAL));
             panel.addComponent(leftSubPanel.withBorder(Borders.singleLine()), BorderLayout.Location.LEFT); // Place button at the bottom of the panel
@@ -156,6 +177,7 @@ public class TDM {
 
             TerminalSize size = new TerminalSize(17, 20);
             ActionListBox dataframeActionListBox = new ActionListBox(size);
+            globalDataframeActionListBox = dataframeActionListBox;
 
 //            dataframeActionListBox.addItem("Quick CAL", new Runnable() {
 //                @Override
@@ -173,20 +195,19 @@ public class TDM {
             dataframeActionListBox.addItem("Add", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
 
                 }
             });
             dataframeActionListBox.addItem("Subtract", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+
                 }
             });
             dataframeActionListBox.addItem("Multiply", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+
                 }
             });
             dataframeActionListBox.addItem("Divide", new Runnable() {
@@ -266,6 +287,7 @@ public class TDM {
             dataframeActionListBox.addItem("Add Column", new Runnable() {
                 @Override
                 public void run() {
+                    addColumn();
                     // Code to run when action activated
                 }
             });
@@ -293,6 +315,7 @@ public class TDM {
 
             // init mid - ie center panel
             Panel MidSubPanel = new Panel();
+            globalMidSubPanel = MidSubPanel;
             MidSubPanel.setTheme(theme);
             MidSubPanel.setLayoutManager(new GridLayout(1));
             panel.addComponent(MidSubPanel.withBorder(Borders.doubleLine()), BorderLayout.Location.CENTER);
@@ -355,7 +378,7 @@ public class TDM {
     }
 
     private static void shutDown(Screen screen) throws IOException {
-        System.out.println("Shutting down TDM");
+        //System.out.println("Shutting down TDM");
         screen.close();
         System.exit(0);
     }
@@ -388,7 +411,7 @@ public class TDM {
                     //throw new RuntimeException(e);
                 }
                 try {
-                    table.setTableModel(updateTableFromSQL(String.valueOf(selectedFileNames)));
+                    table.setTableModel(TableFromSQL(String.valueOf(selectedFileNames)));
                 } catch (SQLException e) {
                     showErrorDialog( "SQL Error", String.valueOf((e)));
                     //throw new RuntimeException(e);
@@ -458,7 +481,7 @@ public class TDM {
         BasicWindow dialogWindow = new BasicWindow(title);
         Panel panel = new Panel(new GridLayout(4));
 
-        TextBox textBox = new TextBox("import dev.noodle.*", TextBox.Style.MULTI_LINE)
+        TextBox textBox = new TextBox("  addClassPath(\"./lib/*\") \n import *;", TextBox.Style.MULTI_LINE)
                 .setLayoutData(GridLayout.createLayoutData(
                         GridLayout.Alignment.FILL, // Fill horizontally
                         GridLayout.Alignment.FILL, // Fill vertically
@@ -474,21 +497,24 @@ public class TDM {
             Interpreter i = new Interpreter();
             //textBox.getText();
             try {
+                BshClassLoader.getSystemResource("TDM.jar");
+
                 Object BSHresult = i.eval(textBox.getText());
                 showErrorDialog( "Beanshell Script result", String.valueOf((BSHresult)));
+
             } catch (EvalError e) {
-                showErrorDialog( "Beanshell Script error", (e + "\n" +(e.getErrorText() +"\n")));
+                showErrorDialog( "Beanshell Script error", (e.getErrorText()));
                 //throw new RuntimeException(e);
             }
 //TODO - add program and dependency classpath to beanshell http://beanshell.org/manual/bshmanual.html#Adding_BeanShell_Commands
         });
         Button exitButton = new Button("Exit", dialogWindow::close);
-
         Button saveButton = new Button("Save Script", () -> {
             try {
                 // TODO add script save ability to sqlite
             } catch (Exception e) {
-                throw new RuntimeException(e);
+                showErrorDialog("save script error", String.valueOf((e)));
+                //throw new RuntimeException(e);
             }
     });
         panel.addComponent(saveButton);
