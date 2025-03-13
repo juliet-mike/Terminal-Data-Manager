@@ -195,63 +195,62 @@ public class TDM {
             dataframeActionListBox.addItem("Add", new Runnable() {
                 @Override
                 public void run() {
-
+                    stringMath.addColumns();
                 }
             });
             dataframeActionListBox.addItem("Subtract", new Runnable() {
                 @Override
                 public void run() {
-
+                    stringMath.subtractColumns();
                 }
             });
             dataframeActionListBox.addItem("Multiply", new Runnable() {
                 @Override
                 public void run() {
-
+                    stringMath.multiplyColumns();
                 }
             });
             dataframeActionListBox.addItem("Divide", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+                    stringMath.divideColumns();
                 }
             });
             dataframeActionListBox.addItem("Exponent", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+                    stringMath.exponentColumns();
                 }
             });
             dataframeActionListBox.addItem("ABS", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+                    stringMath.absColumns();
                 }
             });
             dataframeActionListBox.addItem("Round", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+                    stringMath.roundColumns();
                 }
             });
 
-            dataframeActionListBox.addItem("Regression", new Runnable() {
-                @Override
-                public void run() {
-                    // Code to run when action activated
-                }
-            });
-            dataframeActionListBox.addItem("Sort", new Runnable() {
-                @Override
-                public void run() {
-                    // Code to run when action activated
-
-                }
-            });
+//            dataframeActionListBox.addItem("Regression", new Runnable() {
+//                @Override
+//                public void run() {
+//                    // Code to run when action activated
+//                }
+//            });
+//            dataframeActionListBox.addItem("Sort", new Runnable() {
+//                @Override
+//                public void run() {
+//
+//                }
+//            });
             dataframeActionListBox.addItem("Rename Column", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+                    renameColumn();
                 }
             });
             dataframeActionListBox.addItem("Merge Column", new Runnable() {
@@ -260,55 +259,38 @@ public class TDM {
                     mergeColumn();
                 }
             });
-            dataframeActionListBox.addItem("Merge Table", new Runnable() {
-                @Override
-                public void run() {
-                    // Code to run when action activated
-                }
-            });
+//            dataframeActionListBox.addItem("Merge Table", new Runnable() {
+//                @Override
+//                public void run() {
+//                   // may be best left to the custom sql query
+//                }
+//            });
             dataframeActionListBox.addItem("Split Column", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+                    splitColumn();
                 }
             });
             dataframeActionListBox.addItem("Contains", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+                    colContains();
                 }
             });
-            dataframeActionListBox.addItem("If/then/else", new Runnable() {
-                @Override
-                public void run() {
-                    // Code to run when action activated
-                }
-            });
+
             dataframeActionListBox.addItem("Add Column", new Runnable() {
                 @Override
                 public void run() {
                     addColumn();
-                    // Code to run when action activated
                 }
             });
             dataframeActionListBox.addItem("Remove Column", new Runnable() {
                 @Override
                 public void run() {
-                    // Code to run when action activated
+                    removeColumn();
                 }
             });
-            dataframeActionListBox.addItem("Rename Column", new Runnable() {
-                @Override
-                public void run() {
-                    // Code to run when action activated
-                }
-            });
-            dataframeActionListBox.addItem("TrimText", new Runnable() {
-                @Override
-                public void run() {
-                    // Code to run when action activated
-                }
-            });
+
 
             leftSubPanel.addComponent(dataframeActionListBox.withBorder(Borders.singleLine()));
             //content for leftSubPanel ends here
@@ -411,7 +393,7 @@ public class TDM {
                     //throw new RuntimeException(e);
                 }
                 try {
-                    table.setTableModel(TableFromSQL(String.valueOf(selectedFileNames)));
+                    table.setTableModel(TableModelFromSQL(String.valueOf(selectedFileNames)));
                 } catch (SQLException e) {
                     showErrorDialog( "SQL Error", String.valueOf((e)));
                     //throw new RuntimeException(e);

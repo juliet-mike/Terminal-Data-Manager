@@ -71,15 +71,14 @@ public class DataOps {
             }
         }
         sb.append(");");
-        //System.out.println(sb);
         stmt.execute(sb.toString());
-        //log.info(sb.toString());
 
         // insert the data post creating and whatever you just did
         for (int j = 0; j < rowCount; j++) {
             StringBuilder insertSQL = new StringBuilder("INSERT INTO [" + FILENAME + "] (");
             //header names
             // start at 1 to avoid the ID column as that will be included anyway and will probably cause SQL exceptions
+            //nevermind we are just inserting the whole thing now
             for (int i = 0; i < columnCount; i++) {
                 insertSQL.append("[").append(table.getTableModel().getColumnLabel(i)).append("]");
                 //insertSQL.append(table.getTableModel().getColumnLabel(i));
@@ -148,32 +147,32 @@ public class DataOps {
                     .append("TDM_ROW_ID INTEGER PRIMARY KEY AUTOINCREMENT, ");
             // does it need brackets
             for (int i = 0; i < data.length; i++) {
-                sb.append("[\"")
+                sb.append("\"")
                         .append(data[i])
-                        .append("\"]");
+                        .append("\"");
                 sb.append(" TEXT");
                 if (i < data.length - 1) {
                     sb.append(", ");
                 }
             }
             sb.append(");");
-            System.out.println(sb);
+            //System.out.println(sb);
             stmt.execute(sb.toString());
 
             StringBuilder insertSQL = new StringBuilder("INSERT INTO [" + FILENAME + "] (");
             //insertSQL.append(String.join(", ", data))
             for (int i = 0; i < data.length; i++) {
                 //insertSQL.append("[\"").append(data[i]).append("\"]");
-                insertSQL.append("[\"")
+                insertSQL.append("\"")
                         .append(data[i])
-                        .append("\"]");
+                        .append("\"");
                 if (i < data.length - 1) {
                     insertSQL.append(", ");
                 }
             }
             insertSQL.append(") VALUES (");
             insertSQL.append("?,".repeat(data.length).substring(0, data.length * 2 - 1)).append(")");
-            System.out.println(insertSQL);
+            //System.out.println(insertSQL);
 
             try (PreparedStatement pstmt = conn.prepareStatement(insertSQL.toString())) {
                 String[] row;
@@ -196,7 +195,7 @@ public class DataOps {
         }
 
 
-    public static TableModel<String> TableFromSQL(String FILENAME) throws SQLException {
+    public static TableModel<String> TableModelFromSQL(String FILENAME) throws SQLException {
         Table<String> tableData;
         try (Connection conn = DriverManager.getConnection(getDatabaseURL());
              Statement stmt = conn.createStatement();
@@ -222,8 +221,8 @@ public class DataOps {
         return tableData.getTableModel();
     }
 
-    public static void setTableFromSQL(String FILENAME) throws SQLException {
-        Table<String> stringTable = table.setTableModel(TableFromSQL(FILENAME));
+    public static void setTableModelFromSQL(String FILENAME) throws SQLException {
+        Table<String> stringTable = table.setTableModel(TableModelFromSQL(FILENAME));
         table.setTableModel(stringTable.getTableModel());
 
     }
@@ -256,11 +255,12 @@ public class DataOps {
     public static void opnRecentFileFromInternal() {
         BasicWindow dialogWindow = new BasicWindow("open recent file");
         Panel recentPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-        TerminalSize size = new TerminalSize(50, 5);
+        int limitRecentCount = 10;
+        TerminalSize size = new TerminalSize(50, limitRecentCount);
         RadioBoxList<quickOps.Option> selectionBox1 = new RadioBoxList<quickOps.Option>(size);
         try (Connection conn = DriverManager.getConnection(getDatabaseURL());
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT FILENAME FROM [FileList] ORDER BY ID DESC LIMIT 5;" )) {
+             ResultSet rs = stmt.executeQuery("SELECT FILENAME FROM [FileList] ORDER BY ID LIMIT " + limitRecentCount )) {
             //ResultSetMetaData metaData = rs.getMetaData();
             recentPanel.addComponent(selectionBox1);
             int column = 1; int index = 1;
@@ -273,7 +273,7 @@ public class DataOps {
                 if (selectedOption1 != null) {
                     String selectedFileName = selectedOption1.getName();
                     try {
-                        table.setTableModel(TableFromSQL(selectedFileName));
+                        table.setTableModel(TableModelFromSQL(selectedFileName));
                     } catch (SQLException e) {
                         showErrorDialog("SQL error", e.getMessage());
                     }
@@ -289,8 +289,6 @@ public class DataOps {
             showErrorDialog("SQL error", e.getMessage());
         }
     }
-
-
 
 
 
