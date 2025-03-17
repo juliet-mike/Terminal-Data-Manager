@@ -90,7 +90,7 @@ public class DataOps {
             //values
             insertSQL.append(" VALUES (");
             for (int i = 0; i < columnCount; i++) {
-                insertSQL.append("'").append(getTableCell(i , j)).append("'");
+                insertSQL.append("'").append(getTDMTableCell(i , j)).append("'");
                 if (i < columnCount - 1) {
                     insertSQL.append(" ,");
                 }
@@ -222,8 +222,8 @@ public class DataOps {
     }
 
     public static void setTableModelFromSQL(String FILENAME) throws SQLException {
-        Table<String> stringTable = table.setTableModel(TableModelFromSQL(FILENAME));
-        table.setTableModel(stringTable.getTableModel());
+        Table<String> stringTable = getTDMTable().setTableModel(TableModelFromSQL(FILENAME));
+        setTDMTableModel(stringTable.getTableModel());
 
     }
 
@@ -273,7 +273,7 @@ public class DataOps {
                 if (selectedOption1 != null) {
                     String selectedFileName = selectedOption1.getName();
                     try {
-                        table.setTableModel(TableModelFromSQL(selectedFileName));
+                        setTableModelFromSQL(selectedFileName);
                     } catch (SQLException e) {
                         showErrorDialog("SQL error", e.getMessage());
                     }

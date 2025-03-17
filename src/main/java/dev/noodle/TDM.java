@@ -36,32 +36,25 @@ import java.util.Objects;
 
 import static dev.noodle.modules.DataOps.*;
 import static dev.noodle.modules.quickOps.*;
-
-
-
+import static dev.noodle.ui.dataframeActionList.initActionListBox;
 
 public class TDM {
+    private static Table<String> table = new Table<>( "1", "2", "3", "4", "5");
+    private static Path selectedFileNames = Path.of("default"); //= new Path;
+    private static Path selectedFilePaths = Path.of("default"); //= new Path;
 
-    public static Table<String> table = new Table<>( "1", "2", "3", "4", "5");
-    public static Path selectedFileNames = Path.of("default"); //= new Path;
-    public static Path selectedFilePaths = Path.of("default"); //= new Path;
-
-    // should this be its own class?
-    public static Table<String> getTable() {
-        return table;
-    }
-    public static List<String> getTablerow(int row) {
-        return table.getTableModel().getRow(row);
-    }
-    public static List<String> getTableColumn(int column) {
+    public static Table<String> getTDMTable() {return table;}
+    public static TableModel<String> getTDMTableModel() {return table.getTableModel();}
+    public static void setTDMTableModel(TableModel<String> tableModel) {table.setTableModel(tableModel);}
+    public static List<String> getTDMTablerow(int row) {return table.getTableModel().getRow(row);}
+    public static List<String> getTDMTableColumn(int column) {
         List<String> columnData = new ArrayList<>();
-        TableModel<String> model = table.getTableModel();
-        for (int row = 0; row < model.getRowCount(); row++) {
-            columnData.add(model.getCell(column, row));
+        for (int row = 0; row < getTDMTableModel().getRowCount(); row++) {
+            columnData.add(getTDMTableCell(column, row));
         }
         return columnData;
     }
-    public static String getTableCell(int column, int row) {
+    public static String getTDMTableCell(int column, int row) {
         return table.getTableModel().getCell(column, row);
     }
 
@@ -77,11 +70,8 @@ public class TDM {
     public static ActionListBox globalDataframeActionListBox;
     public static Panel globalMidSubPanel;
 
-
     public static void main(String[] args) throws IOException {
         System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "off");
-
-
 
         DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
         Screen screen = null;
@@ -178,119 +168,7 @@ public class TDM {
             TerminalSize size = new TerminalSize(17, 20);
             ActionListBox dataframeActionListBox = new ActionListBox(size);
             globalDataframeActionListBox = dataframeActionListBox;
-
-//            dataframeActionListBox.addItem("Quick CAL", new Runnable() {
-//                @Override
-//                public void run() {
-//                    // Code to run when action activated
-//                }
-//            });
-
-            dataframeActionListBox.addItem("Custom SQL", new Runnable() {
-                @Override
-                public void run() {
-                    quickOps.customSQLWindow();
-                }
-            });
-            dataframeActionListBox.addItem("Add", new Runnable() {
-                @Override
-                public void run() {
-                    stringMath.addColumns();
-                }
-            });
-            dataframeActionListBox.addItem("Subtract", new Runnable() {
-                @Override
-                public void run() {
-                    stringMath.subtractColumns();
-                }
-            });
-            dataframeActionListBox.addItem("Multiply", new Runnable() {
-                @Override
-                public void run() {
-                    stringMath.multiplyColumns();
-                }
-            });
-            dataframeActionListBox.addItem("Divide", new Runnable() {
-                @Override
-                public void run() {
-                    stringMath.divideColumns();
-                }
-            });
-            dataframeActionListBox.addItem("Exponent", new Runnable() {
-                @Override
-                public void run() {
-                    stringMath.exponentColumns();
-                }
-            });
-            dataframeActionListBox.addItem("ABS", new Runnable() {
-                @Override
-                public void run() {
-                    stringMath.absColumns();
-                }
-            });
-            dataframeActionListBox.addItem("Round", new Runnable() {
-                @Override
-                public void run() {
-                    stringMath.roundColumns();
-                }
-            });
-
-//            dataframeActionListBox.addItem("Regression", new Runnable() {
-//                @Override
-//                public void run() {
-//                    // Code to run when action activated
-//                }
-//            });
-//            dataframeActionListBox.addItem("Sort", new Runnable() {
-//                @Override
-//                public void run() {
-//
-//                }
-//            });
-            dataframeActionListBox.addItem("Rename Column", new Runnable() {
-                @Override
-                public void run() {
-                    renameColumn();
-                }
-            });
-            dataframeActionListBox.addItem("Merge Column", new Runnable() {
-                @Override
-                public void run() {
-                    mergeColumn();
-                }
-            });
-//            dataframeActionListBox.addItem("Merge Table", new Runnable() {
-//                @Override
-//                public void run() {
-//                   // may be best left to the custom sql query
-//                }
-//            });
-            dataframeActionListBox.addItem("Split Column", new Runnable() {
-                @Override
-                public void run() {
-                    splitColumn();
-                }
-            });
-            dataframeActionListBox.addItem("Contains", new Runnable() {
-                @Override
-                public void run() {
-                    colContains();
-                }
-            });
-
-            dataframeActionListBox.addItem("Add Column", new Runnable() {
-                @Override
-                public void run() {
-                    addColumn();
-                }
-            });
-            dataframeActionListBox.addItem("Remove Column", new Runnable() {
-                @Override
-                public void run() {
-                    removeColumn();
-                }
-            });
-
+            initActionListBox();
 
             leftSubPanel.addComponent(dataframeActionListBox.withBorder(Borders.singleLine()));
             //content for leftSubPanel ends here
@@ -301,9 +179,7 @@ public class TDM {
             MidSubPanel.setTheme(theme);
             MidSubPanel.setLayoutManager(new GridLayout(1));
             panel.addComponent(MidSubPanel.withBorder(Borders.doubleLine()), BorderLayout.Location.CENTER);
-            // Create the table and store it in a variable
 
-           // Table<String> table = new Table<>( "1", "2", "3", "4", "5");
             // Add the table to the panel
             MidSubPanel.addComponent(table.withBorder(Borders.doubleLine()));
             // Add a row to the table
@@ -358,6 +234,8 @@ public class TDM {
             }
         }
     }
+
+
 
     private static void shutDown(Screen screen) throws IOException {
         //System.out.println("Shutting down TDM");
@@ -426,8 +304,7 @@ public class TDM {
 
         if (directory != null) {
             Table<String> copiedTable = table;
-            if (Objects.equals(copiedTable.getTableModel().getColumnLabel(1), "ID"));
-            {
+            if (Objects.equals(copiedTable.getTableModel().getColumnLabel(1), "ID"));{
                 copiedTable.getTableModel().removeColumn(1);
             }
 
@@ -492,12 +369,12 @@ public class TDM {
         });
         Button exitButton = new Button("Exit", dialogWindow::close);
         Button saveButton = new Button("Save Script", () -> {
-            try {
-                // TODO add script save ability to sqlite
-            } catch (Exception e) {
-                showErrorDialog("save script error", String.valueOf((e)));
-                //throw new RuntimeException(e);
-            }
+//            try {
+//                // TODO add script save ability to sqlite
+//            } catch (Exception e) {
+//                showErrorDialog("save script error", String.valueOf((e)));
+//                //throw new RuntimeException(e);
+//            }
     });
         panel.addComponent(saveButton);
         panel.addComponent(submitButton);

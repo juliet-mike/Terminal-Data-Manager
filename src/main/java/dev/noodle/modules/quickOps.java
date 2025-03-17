@@ -58,19 +58,19 @@ public class quickOps {
         public static void addColumns (){
             twoWayColSelection("Select columns to add", "plus");
             if (isValidColumns()) {
-                String[] values = new String[table.getTableModel().getRowCount()];
-                for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
+                String[] values = new String[getTDMTableModel().getRowCount()];
+                for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
                     try {
-                        double result = Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[0], i)) + Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[1], i));
+                        double result = Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[0], i)) + Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[1], i));
                         values[i] = Double.toString(result);
                     } catch (NumberFormatException e) {
-                        for (int j = 0; j < table.getTableModel().getRowCount(); j++) {
+                        for (int j = 0; j < getTDMTableModel().getRowCount(); j++) {
                             values[j] = "ERROR";
                         }
                         break;
                     }
                 }
-                table.getTableModel().addColumn((table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0]) + "+"+ table.getTableModel().getColumnLabel(arrayOfOperatingColumns[1])), values);
+                getTDMTableModel().addColumn((getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0]) + "+"+ getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[1])), values);
                 resetArrayOfOperatingColumns();
             }
 
@@ -78,19 +78,19 @@ public class quickOps {
         public static void subtractColumns (){
             twoWayColSelection("Select columns to subtract", "minus");
             if (isValidColumns()) {
-                String[] values = new String[table.getTableModel().getRowCount()];
-                for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
+                String[] values = new String[getTDMTableModel().getRowCount()];
+                for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
                     try {
-                        double result = Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[0], i)) - Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[1], i));
+                        double result = Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[0], i)) - Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[1], i));
                         values[i] = Double.toString(result);
                     } catch (NumberFormatException e) {
-                        for (int j = 0; j < table.getTableModel().getRowCount(); j++) {
+                        for (int j = 0; j < getTDMTableModel().getRowCount(); j++) {
                             values[j] = "ERROR";
                         }
                         break;
                     }
                 }
-                table.getTableModel().addColumn((table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0]) + "-"+ table.getTableModel().getColumnLabel(arrayOfOperatingColumns[1])), values);
+                getTDMTableModel().addColumn((getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0]) + "-"+ getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[1])), values);
                 resetArrayOfOperatingColumns();
             }
 
@@ -98,19 +98,19 @@ public class quickOps {
         public static void multiplyColumns (){
             twoWayColSelection("Select columns to multiply", "x");
             if (isValidColumns()) {
-                String[] values = new String[table.getTableModel().getRowCount()];
-                for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
+                String[] values = new String[getTDMTableModel().getRowCount()];
+                for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
                     try {
-                        double result = Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[0], i)) * Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[1], i));
+                        double result = Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[0], i)) * Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[1], i));
                         values[i] = Double.toString(result);
                     } catch (NumberFormatException e) {
-                        for (int j = 0; j < table.getTableModel().getRowCount(); j++) {
+                        for (int j = 0; j < getTDMTableModel().getRowCount(); j++) {
                             values[j] = "ERROR";
                         }
                         break;
                     }
                 }
-                table.getTableModel().addColumn((table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0]) + "x"+ table.getTableModel().getColumnLabel(arrayOfOperatingColumns[1])), values);
+                getTDMTableModel().addColumn((getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0]) + "x"+ getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[1])), values);
                 resetArrayOfOperatingColumns();
             }
 
@@ -118,21 +118,21 @@ public class quickOps {
         public static void divideColumns (){
             twoWayColSelection("Select columns to divide", "/");
             if (isValidColumns()) {
-                String[] values = new String[table.getTableModel().getRowCount()];
-                for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
+                String[] values = new String[getTDMTableModel().getRowCount()];
+                for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
                     try {
-                        double result = Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[0], i)) / Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[1], i));
+                        double result = Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[0], i)) / Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[1], i));
                         values[i] = Double.toString(result);
                     } catch (ArithmeticException e) {
                         values[i] = "DIV-BY-ZERO";
                     } catch (NumberFormatException e) {
-                        for (int j = 0; j < table.getTableModel().getRowCount(); j++) {
+                        for (int j = 0; j < getTDMTableModel().getRowCount(); j++) {
                             values[j] = "ERROR";
                         }
                         break;
                     }
                 }
-                table.getTableModel().addColumn((table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0]) + "/"+ table.getTableModel().getColumnLabel(arrayOfOperatingColumns[1])), values);
+                getTDMTableModel().addColumn((getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0]) + "/"+ getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[1])), values);
                 resetArrayOfOperatingColumns();
             }
 
@@ -147,19 +147,19 @@ public class quickOps {
                         .build()
                         .showDialog(globalGui);
 
-                String[] values = new String[table.getTableModel().getRowCount()];
-                for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
+                String[] values = new String[getTDMTableModel().getRowCount()];
+                for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
                     try{
-                        values[i] = String.valueOf(Math.pow(Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[0], i)), Double.parseDouble(userInput)));
+                        values[i] = String.valueOf(Math.pow(Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[0], i)), Double.parseDouble(userInput)));
                     }
                     catch (NumberFormatException e){
-                        for (int j = 0; j < table.getTableModel().getRowCount(); j++) {
+                        for (int j = 0; j < getTDMTableModel().getRowCount(); j++) {
                             values[j] = "ERROR";
                         }
                         break;
                     }
                 }
-                table.getTableModel().addColumn( "EXP_" + userInput +"_"+ (table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0])), values);
+                getTDMTableModel().addColumn( "EXP_" + userInput +"_"+ (getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0])), values);
                 resetArrayOfOperatingColumns();
             }
 
@@ -167,19 +167,19 @@ public class quickOps {
         public static void absColumns (){
             oneWayColSelection("Select column to get ABS", "|ABS|");
             if (isValidColumns()) {
-                String[] values = new String[table.getTableModel().getRowCount()];
-                for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
+                String[] values = new String[getTDMTableModel().getRowCount()];
+                for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
                     try{
-                        values[i] = String.valueOf(Math.abs(Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[0], i))));
+                        values[i] = String.valueOf(Math.abs(Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[0], i))));
                     }
                     catch (NumberFormatException e){
-                        for (int j = 0; j < table.getTableModel().getRowCount(); j++) {
+                        for (int j = 0; j < getTDMTableModel().getRowCount(); j++) {
                             values[j] = "ERROR";
                         }
                         break;
                     }
                 }
-                table.getTableModel().addColumn( "ABS_" + (table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0])), values);
+                getTDMTableModel().addColumn( "ABS_" + (getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0])), values);
                 resetArrayOfOperatingColumns();
 
             }
@@ -187,19 +187,19 @@ public class quickOps {
         public static void roundColumns (){
             oneWayColSelection("Select column to round", "");
             if (isValidColumns()) {
-                String[] values = new String[table.getTableModel().getRowCount()];
-                for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
+                String[] values = new String[getTDMTableModel().getRowCount()];
+                for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
                     try{
-                        values[i] = String.valueOf(Math.round(Double.parseDouble(table.getTableModel().getCell(arrayOfOperatingColumns[0], i))));
+                        values[i] = String.valueOf(Math.round(Double.parseDouble(getTDMTableModel().getCell(arrayOfOperatingColumns[0], i))));
                     }
                     catch (NumberFormatException e){
-                        for (int j = 0; j < table.getTableModel().getRowCount(); j++) {
+                        for (int j = 0; j < getTDMTableModel().getRowCount(); j++) {
                             values[j] = "ERROR";
                         }
                         break;
                     }
                 }
-                table.getTableModel().addColumn( "ROUND_" + (table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0])), values);
+                getTDMTableModel().addColumn( "ROUND_" + (getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0])), values);
                 resetArrayOfOperatingColumns();
             }
         }
@@ -224,7 +224,7 @@ public class quickOps {
 
         Button submitButton = new Button("Submit", () -> {
             try {
-                table.setTableModel(CustomUpdateTableFromSQL(textBox.getText()));
+                setTDMTableModel(CustomUpdateTableFromSQL(textBox.getText()));
             } catch (SQLException e) {
                 showErrorDialog("SQL Error", e.getMessage());
             }
@@ -243,8 +243,8 @@ public class quickOps {
         Panel panel = new Panel(new GridLayout(2));
         TerminalSize size = new TerminalSize(20, 10);
         RadioBoxList<Option> selectionBox1 = new RadioBoxList<Option>(size);
-        for (int i = 0; i < (table.getTableModel().getColumnCount()); i++) {
-            selectionBox1.addItem((new Option(i, table.getTableModel().getColumnLabel(i))));
+        for (int i = 0; i < (getTDMTableModel().getColumnCount()); i++) {
+            selectionBox1.addItem((new Option(i, getTDMTableModel().getColumnLabel(i))));
         }
         panel.addComponent(selectionBox1);
         Label label = new Label(operatorText);
@@ -273,16 +273,16 @@ public class quickOps {
         Panel panel = new Panel(new GridLayout(3));
         TerminalSize size = new TerminalSize(20, 10);
         RadioBoxList<Option> selectionBox1 = new RadioBoxList<Option>(size);
-        for (int i = 0; i < (table.getTableModel().getColumnCount()); i++) {
-            selectionBox1.addItem((new Option(i, table.getTableModel().getColumnLabel(i))));
+        for (int i = 0; i < (getTDMTableModel().getColumnCount()); i++) {
+            selectionBox1.addItem((new Option(i, getTDMTableModel().getColumnLabel(i))));
         }
         panel.addComponent(selectionBox1);
         Label label = new Label(operatorText);
         panel.addComponent(label);
 
         RadioBoxList<Option> selectionBox2 = new RadioBoxList<Option>(size);
-        for (int i = 0; i < (table.getTableModel().getColumnCount()); i++) {
-            selectionBox2.addItem((new Option(i, table.getTableModel().getColumnLabel(i))));
+        for (int i = 0; i < (getTDMTableModel().getColumnCount()); i++) {
+            selectionBox2.addItem((new Option(i, getTDMTableModel().getColumnLabel(i))));
         }
         panel.addComponent(selectionBox2);
         dialogWindow.setComponent(panel);
@@ -314,25 +314,25 @@ public class quickOps {
         if (Objects.equals(result, "")) {
             return;
         }
-        String[] values = new String[table.getTableModel().getRowCount()];
-        for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
+        String[] values = new String[getTDMTableModel().getRowCount()];
+        for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
             values[i] = "";
         }
-        table.getTableModel().addColumn((result), values);
+        getTDMTableModel().addColumn((result), values);
         resetArrayOfOperatingColumns();
     }
 //    public static void addColumn(String header) {
-//        String[] values = new String[table.getTableModel().getRowCount()];
-//        for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
+//        String[] values = new String[getTDMTableModel().getRowCount()];
+//        for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
 //            values[i] = "";
 //        }
-//        table.getTableModel().addColumn((header), values);
+//        getTDMTableModel().addColumn((header), values);
 //    }
     public static void renameColumn() {
         //System.out.println("Rename Column");
         oneWayColSelection("Select a Column to Rename", " ");
         if (isValidColumns()){
-            String old = table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0]);
+            String old = getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0]);
             String result = new TextInputDialogBuilder()
                     .setTitle("Rename Column")
                     .setDescription("Please input a new column name")
@@ -341,9 +341,9 @@ public class quickOps {
                     .showDialog(globalGui);
 
             if ((result != null) || (!result.isEmpty())) {
-                table.getTableModel().setColumnLabel(arrayOfOperatingColumns[0], result);
+                getTDMTableModel().setColumnLabel(arrayOfOperatingColumns[0], result);
             } else {
-                table.getTableModel().setColumnLabel(arrayOfOperatingColumns[0], old);
+                getTDMTableModel().setColumnLabel(arrayOfOperatingColumns[0], old);
             }
         }
         resetArrayOfOperatingColumns();
@@ -352,15 +352,15 @@ public class quickOps {
     public static void mergeColumn() {
         twoWayColSelection("Select columns to merge", "merge with");
         if (isValidColumns()) {
-        String label = table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0]) + table.getTableModel().getColumnLabel(arrayOfOperatingColumns[1]);
-        String[] values = new String[table.getTableModel().getRowCount()];
-        List<String> first = getTableColumn(arrayOfOperatingColumns[0]);
-        List<String> second = getTableColumn(arrayOfOperatingColumns[1]);
-        for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
+        String label = getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0]) + getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[1]);
+        String[] values = new String[getTDMTableModel().getRowCount()];
+        List<String> first = getTDMTableColumn(arrayOfOperatingColumns[0]);
+        List<String> second = getTDMTableColumn(arrayOfOperatingColumns[1]);
+        for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
             values[i] = first.get(i) + second.get(i);
         }
         resetArrayOfOperatingColumns();
-        table.getTableModel().addColumn((label), values);
+        getTDMTableModel().addColumn((label), values);
         } else {
             showErrorDialog("invalid columns", "invalid columns selected \n array of operating columns may not have been reset on the last operation \n ignore this message if you canceled the merge intentionally");
         }
@@ -368,8 +368,8 @@ public class quickOps {
     public static void splitColumn() {
         oneWayColSelection("Select a Column to Split", "you will be asked for a delimiter to split the col next");
         if (isValidColumns()) {
-            String origLabel = table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0]);
-            List<String> data = getTableColumn(arrayOfOperatingColumns[0]);
+            String origLabel = getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0]);
+            List<String> data = getTDMTableColumn(arrayOfOperatingColumns[0]);
             String userInput = new TextInputDialogBuilder()
                     .setTitle("Delimiter")
                     .setDescription("Please input a Delimiter to split the column \n the first instance of the delimiter will start the split operation")
@@ -378,8 +378,8 @@ public class quickOps {
                     .showDialog(globalGui);
 
             if ((userInput != null) || (!userInput.isEmpty())) {
-                String[] col1 = new String[table.getTableModel().getRowCount()];
-                String[] col2 = new String[table.getTableModel().getRowCount()];
+                String[] col1 = new String[getTDMTableModel().getRowCount()];
+                String[] col2 = new String[getTDMTableModel().getRowCount()];
                 for (int i = 0; i < data.size(); i++) {
                     try {
                         String[] result = (data.get(i).split(userInput, 2));
@@ -392,9 +392,9 @@ public class quickOps {
                     }
 
                 }
-                int colcount = table.getTableModel().getColumnCount();
-                table.getTableModel().addColumn((origLabel + "split_COL" + (colcount + 1)), col1);
-                table.getTableModel().addColumn((origLabel + "split_COL" + (colcount + 2)), col2);
+                int colcount = getTDMTableModel().getColumnCount();
+                getTDMTableModel().addColumn((origLabel + "split_COL" + (colcount + 1)), col1);
+                getTDMTableModel().addColumn((origLabel + "split_COL" + (colcount + 2)), col2);
             }
 
         }
@@ -403,7 +403,7 @@ public class quickOps {
     public static void colContains(){
         oneWayColSelection("Select a Column to check for", "");
         if (isValidColumns()) {
-            String origLabel = table.getTableModel().getColumnLabel(arrayOfOperatingColumns[0]);
+            String origLabel = getTDMTableModel().getColumnLabel(arrayOfOperatingColumns[0]);
             String userInput = new TextInputDialogBuilder()
                     .setTitle("Contains")
                     .setDescription("input a value to check if the column contains it")
@@ -412,15 +412,15 @@ public class quickOps {
                     .showDialog(globalGui);
 
             if ((userInput != null) || (!userInput.isEmpty())) {
-                String[] colData = new String[table.getTableModel().getRowCount()];
-                for (int i = 0; i < table.getTableModel().getRowCount(); i++) {
-                    if (getTableCell((arrayOfOperatingColumns[0]), i).contains(userInput)) {
+                String[] colData = new String[getTDMTableModel().getRowCount()];
+                for (int i = 0; i < getTDMTableModel().getRowCount(); i++) {
+                    if (getTDMTableCell((arrayOfOperatingColumns[0]), i).contains(userInput)) {
                         colData[i] = "TRUE";
                     } else {
                         colData[i] = "FALSE";
                     }
                 }
-                table.getTableModel().addColumn((origLabel + "_CONTAINS_" + userInput), colData);
+                getTDMTableModel().addColumn((origLabel + "_CONTAINS_" + userInput), colData);
             }
         }
         resetArrayOfOperatingColumns();
@@ -429,7 +429,7 @@ public class quickOps {
     public static void removeColumn() {
         oneWayColSelection("Select a Column to remove", "");
         if (isValidColumns()) {
-            table.getTableModel().removeColumn(arrayOfOperatingColumns[0]);
+            getTDMTableModel().removeColumn(arrayOfOperatingColumns[0]);
         }
         resetArrayOfOperatingColumns();
     }
