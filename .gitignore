@@ -1,6 +1,6 @@
 
 doc/
-#target/
+target/
 out/
 .tmp.drivedownload/*
 .tmp.driveupload/*
@@ -80,3 +80,4 @@ replay_pid*
 /target/workingDb.db
 /.tmp.drivedownload/
 /.tmp.driveupload/
+

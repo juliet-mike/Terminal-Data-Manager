@@ -52,6 +52,12 @@ import java.util.List;
 import java.util.Objects;
 
 
+import org.graalvm.polyglot.Context;
+import org.graalvm.polyglot.Value;
+import org.graalvm.polyglot.Source;
+import org.graalvm.polyglot.PolyglotException;
+
+
 import static dev.noodle.modules.DataOps.*;
 import static dev.noodle.ui.dataframeActionList.initActionListBox;
 
@@ -367,7 +373,8 @@ public class TDM {
         BasicWindow dialogWindow = new BasicWindow(title);
         Panel panel = new Panel(new GridLayout(4));
 
-        TextBox textBox = new TextBox("  addClassPath(\"./lib/*\") \n import *;", TextBox.Style.MULTI_LINE)
+        TextBox textBox = new TextBox("import java \n " +
+                "", TextBox.Style.MULTI_LINE)
                 .setLayoutData(GridLayout.createLayoutData(
                         GridLayout.Alignment.FILL, // Fill horizontally
                         GridLayout.Alignment.FILL, // Fill vertically
@@ -381,17 +388,19 @@ public class TDM {
 
         Button submitButton = new Button("Submit", () -> {
             //TODO CHANGE TO GRALLPYTHON SCRIPT INSTEAD OF BEANSHELL
-//            //textBox.getText();
-//            try {
-//                BshClassLoader.getSystemResource("TDM.jar");
-//
-//                Object BSHresult = i.eval(textBox.getText());
-//                showErrorDialog( "Beanshell Script result", String.valueOf((BSHresult)));
-//
-//            } catch (EvalError e) {
-//                showErrorDialog( "Beanshell Script error", (e.getErrorText()));
-//                //throw new RuntimeException(e);
-//            }
+            String pythonScript = textBox.getText();
+            try (Context context = Context.newBuilder().allowAllAccess(true).build()) {
+                // Evaluate the Python script
+                Value result = context.eval("python", pythonScript);
+                // Display the result
+                showErrorDialog("Python Script Result", result.toString());
+            } catch (PolyglotException e) {
+                // Handle exceptions in the Python script
+                showErrorDialog("Python Script Error", e.getMessage());
+            } catch (Exception e) {
+                // Handle other exceptions
+                showErrorDialog("Error", e.getMessage());
+            }
 
         });
         Button exitButton = new Button("Exit", dialogWindow::close);
