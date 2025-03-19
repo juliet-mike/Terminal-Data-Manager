@@ -1,7 +1,26 @@
+
+//                         TDM - Terminal Data Manager
+//        Copyright (C) 2025 juliet-mike (https://github.com/juliet-mike)
+//
+//        This program is free software: you can redistribute it and/or modify
+//        it under the terms of the GNU General Public License as published by
+//        the Free Software Foundation, either version 3 of the License, or
+//        (at your option) any later version.
+//
+//        This program is distributed in the hope that it will be useful,
+//        but WITHOUT ANY WARRANTY; without even the implied warranty of
+//        MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//        GNU General Public License for more details.
+//
+//        You should have received a copy of the GNU General Public License
+//        along with this program.  If not, see <https://www.gnu.org/licenses/>.
+//
+//
+//
+
 package dev.noodle;
 
-import bsh.*;
-import bsh.classpath.BshClassLoader;
+
 import com.googlecode.lanterna.TerminalSize;
 import com.googlecode.lanterna.TextColor;
 import com.googlecode.lanterna.bundle.LanternaThemes;
@@ -19,7 +38,6 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
 import dev.noodle.modules.DataOps;
-import dev.noodle.modules.quickOps;
 
 
 import java.io.File;
@@ -35,7 +53,6 @@ import java.util.Objects;
 
 
 import static dev.noodle.modules.DataOps.*;
-import static dev.noodle.modules.quickOps.*;
 import static dev.noodle.ui.dataframeActionList.initActionListBox;
 
 public class TDM {
@@ -111,7 +128,7 @@ public class TDM {
             Menu fileMenu = new Menu("File");
             globalFilelMenu = fileMenu;
             Label finalSelectedFileLabel = selectedFileLabel0;
-            fileMenu.add(new MenuItem("Import New File", () -> {
+            fileMenu.add(new MenuItem("Import New CSV File", () -> {
                 try {
                     openFileDialog( finalSelectedFileLabel, gui);
                 } catch (SQLException | CsvValidationException | IOException | InterruptedException e) {
@@ -119,18 +136,28 @@ public class TDM {
                     showErrorDialog( "Error Importing Table", e.getMessage());
                 }
             }));
+
+            fileMenu.add(new MenuItem("Import From Remote SQL", () -> {
+                try {
+                    openFileDialog( finalSelectedFileLabel, gui);
+                } catch (SQLException | CsvValidationException | IOException | InterruptedException e) {
+                    //throw new RuntimeException(e);
+                    showErrorDialog( "Error Importing Table", e.getMessage());
+                }
+            }));
+
             fileMenu.add(new MenuItem("Open Recent", DataOps::opnRecentFileFromInternal));
 
             //new method - open PATH dialog after having a user input popup
             fileMenu.add(new MenuItem("Save to Internal Memory", () -> {
                 try {
-                    DataOps.TabletoSQL(selectedFileNames.toString(), table);
+                    DataOps.TableToInternalSQL(selectedFileNames.toString(), table);
                 } catch (SQLException e) {
                     showErrorDialog( "ERROR", "there was an error saving the current table \n check to make sure you have no SQL strings in the table");
                     //throw new RuntimeException(e);
                 }
             }));
-            fileMenu.add(new MenuItem("Save As CSV", TDM::openSaveDialog));
+            fileMenu.add(new MenuItem("Export As CSV", TDM::openSaveDialog));
             //todo add user prefs and its menu
             //Menu settingsMenu = new Menu("Settings");
             //settingsMenu.add(new MenuItem("User Preferences", () -> System.out.println("User Preferences selected")));
@@ -353,19 +380,19 @@ public class TDM {
         //change mode with dropdown? for py and beanshell as well as actuall shell terminal
 
         Button submitButton = new Button("Submit", () -> {
-            Interpreter i = new Interpreter();
-            //textBox.getText();
-            try {
-                BshClassLoader.getSystemResource("TDM.jar");
+            //TODO CHANGE TO GRALLPYTHON SCRIPT INSTEAD OF BEANSHELL
+//            //textBox.getText();
+//            try {
+//                BshClassLoader.getSystemResource("TDM.jar");
+//
+//                Object BSHresult = i.eval(textBox.getText());
+//                showErrorDialog( "Beanshell Script result", String.valueOf((BSHresult)));
+//
+//            } catch (EvalError e) {
+//                showErrorDialog( "Beanshell Script error", (e.getErrorText()));
+//                //throw new RuntimeException(e);
+//            }
 
-                Object BSHresult = i.eval(textBox.getText());
-                showErrorDialog( "Beanshell Script result", String.valueOf((BSHresult)));
-
-            } catch (EvalError e) {
-                showErrorDialog( "Beanshell Script error", (e.getErrorText()));
-                //throw new RuntimeException(e);
-            }
-//TODO - add program and dependency classpath to beanshell http://beanshell.org/manual/bshmanual.html#Adding_BeanShell_Commands
         });
         Button exitButton = new Button("Exit", dialogWindow::close);
         Button saveButton = new Button("Save Script", () -> {

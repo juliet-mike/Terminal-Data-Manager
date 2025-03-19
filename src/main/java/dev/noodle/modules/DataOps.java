@@ -45,10 +45,11 @@ public class DataOps {
         return DBurl;
     }
 
-    public static void TabletoSQL(String FILENAME, Table<String> table) throws SQLException {
+    public static void TableToInternalSQL(String FILENAME, Table<String> table) throws SQLException {
         Connection conn = DriverManager.getConnection(getDatabaseURL());
         Statement stmt = conn.createStatement();
         stmt.execute("DROP TABLE IF EXISTS [" + FILENAME + "]");
+
 
         if (Objects.equals(table.getTableModel().getColumnLabel(0), "ID")){
         System.out.println("YOU HAVE ID IN THE #1 header");
@@ -224,7 +225,6 @@ public class DataOps {
     public static void setTableModelFromSQL(String FILENAME) throws SQLException {
         Table<String> stringTable = getTDMTable().setTableModel(TableModelFromSQL(FILENAME));
         setTDMTableModel(stringTable.getTableModel());
-
     }
 
     public static TableModel<String> CustomUpdateTableFromSQL(String query) throws SQLException {
