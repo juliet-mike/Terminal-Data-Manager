@@ -196,7 +196,7 @@ public class DataOps {
         }
 
 
-    public static TableModel<String> TableModelFromSQL(String FILENAME) throws SQLException {
+    public static TableModel<String> tableModelFromInternalSQLTable(String FILENAME) throws SQLException {
         Table<String> tableData;
         try (Connection conn = DriverManager.getConnection(getDatabaseURL());
              Statement stmt = conn.createStatement();
@@ -222,12 +222,12 @@ public class DataOps {
         return tableData.getTableModel();
     }
 
-    public static void setTableModelFromSQL(String FILENAME) throws SQLException {
-        Table<String> stringTable = getTDMTable().setTableModel(TableModelFromSQL(FILENAME));
+    public static void setTableModelFromInternalDB(String FILENAME) throws SQLException {
+        Table<String> stringTable = getTDMTable().setTableModel(tableModelFromInternalSQLTable(FILENAME));
         setTDMTableModel(stringTable.getTableModel());
     }
 
-    public static TableModel<String> CustomUpdateTableFromSQL(String query) throws SQLException {
+    public static TableModel<String> CustomGetTableModelFromSQL(String query) throws SQLException {
         Table<String> tableData;
         try (Connection conn = DriverManager.getConnection(getDatabaseURL());
              Statement stmt = conn.createStatement();
@@ -252,6 +252,38 @@ public class DataOps {
         }
         return tableData.getTableModel();
     }
+
+    public static TableModel<String> CustomGetTableModelFromSQL(String query, Connection connection) throws SQLException {
+        Table<String> tableData;
+        Connection conn = connection;
+        Statement stmt = conn.createStatement();
+
+        ResultSet rs = stmt.executeQuery(query);
+        {
+            ResultSetMetaData metaData = rs.getMetaData();
+            int columnCount = metaData.getColumnCount();
+
+            // Add headers as the first row
+            String[] headers = new String[columnCount];
+            for (int i = 1; i <= columnCount; i++) {
+                headers[i - 1] = metaData.getColumnName(i);
+            }
+            tableData = new Table<>(headers);
+            // Add row data
+            while (rs.next()) {
+                String[] row = new String[columnCount];
+                for (int i = 1; i <= columnCount; i++) {
+                    row[i - 1] = rs.getString(i);
+                }
+                tableData.getTableModel().addRow(row);
+            }
+        }
+        return tableData.getTableModel();
+    }
+
+
+
+
     public static void opnRecentFileFromInternal() {
         BasicWindow dialogWindow = new BasicWindow("open recent file");
         Panel recentPanel = new Panel(new LinearLayout(Direction.VERTICAL));
@@ -273,7 +305,7 @@ public class DataOps {
                 if (selectedOption1 != null) {
                     String selectedFileName = selectedOption1.getName();
                     try {
-                        setTableModelFromSQL(selectedFileName);
+                        setTableModelFromInternalDB(selectedFileName);
                     } catch (SQLException e) {
                         showErrorDialog("SQL error", e.getMessage());
                     }

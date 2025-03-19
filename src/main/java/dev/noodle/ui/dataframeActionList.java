@@ -1,8 +1,5 @@
 package dev.noodle.ui;
 
-import com.googlecode.lanterna.gui2.ActionListBox;
-import dev.noodle.modules.quickOps;
-
 import static dev.noodle.modules.quickOps.*;
 import static dev.noodle.modules.quickOps.removeColumn;
 import static dev.noodle.TDM.globalDataframeActionListBox;
@@ -16,7 +13,6 @@ public class dataframeActionList {
 //                    // Code to run when action activated
 //                }
 //            });
-
         globalDataframeActionListBox.addItem("Custom SQL", new Runnable() {
             @Override
             public void run() {

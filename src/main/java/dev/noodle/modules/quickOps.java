@@ -13,9 +13,7 @@ import java.util.Objects;
 
 
 import static dev.noodle.TDM.*;
-import static dev.noodle.modules.DataOps.*;
 
-// this class is cursed but it makes things work and display how i want so we are gonna live with it
 public class quickOps {
     public static int[] arrayOfOperatingColumns =  {-1, -1};
 
@@ -224,7 +222,7 @@ public class quickOps {
 
         Button submitButton = new Button("Submit", () -> {
             try {
-                setTDMTableModel(CustomUpdateTableFromSQL(textBox.getText()));
+                setTDMTableModel(DataOps.CustomGetTableModelFromSQL(textBox.getText()));
             } catch (SQLException e) {
                 showErrorDialog("SQL Error", e.getMessage());
             }

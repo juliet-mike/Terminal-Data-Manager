@@ -52,9 +52,9 @@ import java.util.List;
 import java.util.Objects;
 
 
+import dev.noodle.remoteSQL.remoteSQL;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
-import org.graalvm.polyglot.Source;
 import org.graalvm.polyglot.PolyglotException;
 
 
@@ -65,6 +65,13 @@ public class TDM {
     private static Table<String> table = new Table<>( "1", "2", "3", "4", "5");
     private static Path selectedFileNames = Path.of("default"); //= new Path;
     private static Path selectedFilePaths = Path.of("default"); //= new Path;
+
+    public static void setSelectedFileNames(Path selectedFileNames) {TDM.selectedFileNames = selectedFileNames;}
+    public static void setSelectedFilePaths(Path selectedFilePaths) {TDM.selectedFilePaths = selectedFilePaths;}
+    public static void setSelectedFileNames(String selectedFileNames) {TDM.selectedFileNames = Path.of(selectedFileNames);}
+    public static void setSelectedFilePaths(String selectedFilePaths) {TDM.selectedFilePaths = Path.of(selectedFilePaths);}
+    public static Path getSelectedFileNames() {return selectedFileNames;}
+    public static Path getSelectedFilePaths() {return selectedFilePaths;}
 
     public static Table<String> getTDMTable() {return table;}
     public static TableModel<String> getTDMTableModel() {return table.getTableModel();}
@@ -120,6 +127,8 @@ public class TDM {
             topSubPanel.setTheme(theme);
 
             MenuBar menubar = new MenuBar();
+            Theme theme2 = LanternaThemes.getRegisteredTheme("default");
+            menubar.setTheme(theme2);
             globalMenuBar = menubar;
             topSubPanel.addComponent(menubar);
 
@@ -143,14 +152,7 @@ public class TDM {
                 }
             }));
 
-            fileMenu.add(new MenuItem("Import From Remote SQL", () -> {
-                try {
-                    openFileDialog( finalSelectedFileLabel, gui);
-                } catch (SQLException | CsvValidationException | IOException | InterruptedException e) {
-                    //throw new RuntimeException(e);
-                    showErrorDialog( "Error Importing Table", e.getMessage());
-                }
-            }));
+            fileMenu.add(new MenuItem("Import From Remote SQL", remoteSQL::importRemote));
 
             fileMenu.add(new MenuItem("Open Recent", DataOps::opnRecentFileFromInternal));
 
@@ -217,8 +219,8 @@ public class TDM {
             MidSubPanel.addComponent(table.withBorder(Borders.doubleLine()));
             // Add a row to the table
 
-            for (int i = 0; i < 50; i++) {
-                table.getTableModel().addRow("1", "2", "3", "4", "5");
+            for (int i = 0; i < 20; i++) {
+                table.getTableModel().addRow("", "", "", "", "");
             }
 
             table.setCellSelection(true);
@@ -236,9 +238,6 @@ public class TDM {
                             .showDialog(gui);
 
                     if (result != null) {
-                        //System.out.println("User input: " + result);
-                        //todo set user input to new cell value and write to db
-                        //or check if there have been changes in x number of seconds then write?
                         table.getTableModel().setCell(selectedCol, selectedRow, result);
                     }
                 }
@@ -277,7 +276,6 @@ public class TDM {
     }
 
     public static void openFileDialog( Label selectedFileLabels, MultiWindowTextGUI gui) throws SQLException, CsvValidationException, IOException, InterruptedException {
-        //todo use the index for recent imports list
         String input = String.valueOf(new FileDialogBuilder()
                 .setTitle("Import File")
                 .setDescription("Choose a file")
@@ -304,7 +302,7 @@ public class TDM {
                     //throw new RuntimeException(e);
                 }
                 try {
-                    table.setTableModel(TableModelFromSQL(String.valueOf(selectedFileNames)));
+                    table.setTableModel(tableModelFromInternalSQLTable(String.valueOf(selectedFileNames)));
                 } catch (SQLException e) {
                     showErrorDialog( "SQL Error", String.valueOf((e)));
                     //throw new RuntimeException(e);
@@ -373,8 +371,7 @@ public class TDM {
         BasicWindow dialogWindow = new BasicWindow(title);
         Panel panel = new Panel(new GridLayout(4));
 
-        TextBox textBox = new TextBox("import java \n " +
-                "", TextBox.Style.MULTI_LINE)
+        TextBox textBox = new TextBox("import java \n ", TextBox.Style.MULTI_LINE)
                 .setLayoutData(GridLayout.createLayoutData(
                         GridLayout.Alignment.FILL, // Fill horizontally
                         GridLayout.Alignment.FILL, // Fill vertically
@@ -387,7 +384,7 @@ public class TDM {
         //change mode with dropdown? for py and beanshell as well as actuall shell terminal
 
         Button submitButton = new Button("Submit", () -> {
-            //TODO CHANGE TO GRALLPYTHON SCRIPT INSTEAD OF BEANSHELL
+            //TODO needs further implementation
             String pythonScript = textBox.getText();
             try (Context context = Context.newBuilder().allowAllAccess(true).build()) {
                 // Evaluate the Python script
