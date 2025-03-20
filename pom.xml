@@ -6,7 +6,7 @@
 
     <groupId>dev.noodle</groupId>
     <artifactId>TDM</artifactId>
-    <version>0.1-SNAPSHOT</version>
+    <version>0.3-SNAPSHOT</version>
 
     <properties>
         <maven.compiler.source>21</maven.compiler.source>
@@ -43,7 +43,6 @@
             <type>pom</type>
             <scope>runtime</scope>
         </dependency>
-
         <dependency>
             <groupId>org.graalvm.python</groupId>
             <artifactId>python-embedding</artifactId>
