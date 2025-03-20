@@ -136,7 +136,7 @@ public class quickOps {
 
         }
         public static void exponentColumns (){
-            oneWayColSelection("Select column to get ABS", "|ABS|");
+            oneWayColSelection("Select column to calculate the exponent", "");
             if (isValidColumns()) {
                 String userInput = new TextInputDialogBuilder()
                         .setTitle("EXPONENT")
