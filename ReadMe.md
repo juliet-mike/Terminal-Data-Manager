@@ -1,6 +1,7 @@
 <h1>Terminal Data Manager V0.3</h1>
 
-![image](https://github.com/user-attachments/assets/509645af-9edd-490c-b92c-10ae02ba6b42)
+![{F2917E28-39C4-4066-8C2C-65F5A17839CE}](https://github.com/user-attachments/assets/3c79a2c1-803e-4d56-a271-7bf70bd01993)
+
 <h2> TDM is a simple terminal based data manager for dumping and manipulating CSV files and SQL databases and allowing simple spreadsheet CRUD operations.
 It can be run from either the shell or as a graphical application on windows, linux or mac with no modification. it will automatically detect which of these two modes it intializes in based on how you start the program.  if using the run.sh or run.bat tdm will start in shell mode but if run from your file browser how you would any other program it will start in GUI mode.
 
