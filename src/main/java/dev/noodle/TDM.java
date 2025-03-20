@@ -245,7 +245,7 @@ public class TDM {
             // mid/center panel ends here
 
             // Create the window to hold the panel (this is the actual window that appears on the screen)
-            BasicWindow mainWindow = new BasicWindow("TDM v 0.01");
+            BasicWindow mainWindow = new BasicWindow("TDM v 0.03");
             // Set the window to be full-screen and expand its content
             mainWindow.setHints(Arrays.asList(Window.Hint.EXPANDED, Window.Hint.FIT_TERMINAL_WINDOW));
             // Add the panel to the window
@@ -445,7 +445,7 @@ public class TDM {
             memTracking = false;
         }
         private static void displayCurrentMemoryUsage(Label memoryLabel) throws InterruptedException {
-                memoryLabel.setText("Memory: " + getUsedMemory() +  " MiB");
+                memoryLabel.setText("Memory: " + getUsedMemory() +  " Mb");
                 Thread.sleep(5000);
         }
         public static int getUsedMemory() {
