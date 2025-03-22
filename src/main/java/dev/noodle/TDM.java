@@ -37,7 +37,7 @@ import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 
 import com.opencsv.CSVWriter;
 import com.opencsv.exceptions.CsvValidationException;
-import dev.noodle.modules.DataOps;
+import dev.noodle.modules.dataOps;
 
 
 import java.io.File;
@@ -52,13 +52,14 @@ import java.util.List;
 import java.util.Objects;
 
 
+import dev.noodle.modules.quickOps;
 import dev.noodle.remoteSQL.remoteSQL;
 import org.graalvm.polyglot.Context;
 import org.graalvm.polyglot.Value;
 import org.graalvm.polyglot.PolyglotException;
 
 
-import static dev.noodle.modules.DataOps.*;
+import static dev.noodle.modules.dataOps.*;
 import static dev.noodle.ui.dataframeActionList.initActionListBox;
 
 public class TDM {
@@ -68,8 +69,8 @@ public class TDM {
 
     public static void setSelectedFileNames(Path selectedFileNames) {TDM.selectedFileNames = selectedFileNames;}
     public static void setSelectedFilePaths(Path selectedFilePaths) {TDM.selectedFilePaths = selectedFilePaths;}
-    public static void setSelectedFileNames(String selectedFileNames) {TDM.selectedFileNames = Path.of(selectedFileNames);}
-    public static void setSelectedFilePaths(String selectedFilePaths) {TDM.selectedFilePaths = Path.of(selectedFilePaths);}
+    public static void setSelectedFileNames(String FileName) {TDM.selectedFileNames = Path.of(FileName);}
+    public static void setSelectedFilePaths(String FilePath) {TDM.selectedFilePaths = Path.of(FilePath);}
     public static Path getSelectedFileNames() {return selectedFileNames;}
     public static Path getSelectedFilePaths() {return selectedFilePaths;}
 
@@ -154,12 +155,39 @@ public class TDM {
 
             fileMenu.add(new MenuItem("Import From Remote SQL", remoteSQL::importRemote));
 
-            fileMenu.add(new MenuItem("Open Recent", DataOps::opnRecentFileFromInternal));
+            fileMenu.add(new MenuItem("Open Recent", () -> {
+                BasicWindow dialogWindow = new BasicWindow("open recent file");
+                RadioBoxList<quickOps.Option> selectionBox1 = recentTableEntriesListFromInternalasQuickOption("FILENAME",
+                        "[FileList]",
+                        10);
+                Panel recentPanel = new Panel(new LinearLayout(Direction.VERTICAL));
+                recentPanel.addComponent(selectionBox1);
+
+                RadioBoxList<quickOps.Option> finalSelectionBox = selectionBox1;
+
+                recentPanel.addComponent(new Button("Submit", () -> {
+                    quickOps.Option selectedOption1 = finalSelectionBox.getCheckedItem();
+                    if (selectedOption1 != null) {
+                        //String selectedFileName = selectedOption1.getName();
+                        try {
+                            setTableModelFromInternalDB(selectedOption1.getName());
+                        } catch (SQLException e) {
+                            showErrorDialog("SQL error", e.getMessage());
+                        }
+                        dialogWindow.close();
+                    }
+                }));
+                Button exitButton = new Button("Exit", dialogWindow::close);
+                recentPanel.addComponent(exitButton);
+                dialogWindow.setComponent(recentPanel);
+                globalGui.addWindowAndWait(dialogWindow);
+
+            }));
 
             //new method - open PATH dialog after having a user input popup
             fileMenu.add(new MenuItem("Save to Internal Memory", () -> {
                 try {
-                    DataOps.TableToInternalSQL(selectedFileNames.toString(), table);
+                    dataOps.TableToInternalSQL(selectedFileNames.toString(), table);
                 } catch (SQLException e) {
                     showErrorDialog( "ERROR", "there was an error saving the current table \n check to make sure you have no SQL strings in the table");
                     //throw new RuntimeException(e);
@@ -290,7 +318,7 @@ public class TDM {
             selectedFileLabels.setText(String.valueOf(selectedFileNames));
 
                 try {
-                    DataOps.importCSV(String.valueOf(selectedFileNames), String.valueOf(selectedFilePaths));
+                    dataOps.importCSV(String.valueOf(selectedFileNames), String.valueOf(selectedFilePaths));
                 } catch (IOException e) {
                     showErrorDialog( "IO error", String.valueOf((e)));
                     //throw new RuntimeException(e);
@@ -418,14 +446,31 @@ public class TDM {
     }
 
     public static void showErrorDialog(String title, String message) {
+        String wrappedMessage = wrapText(message, 50);
         MessageDialog.showMessageDialog(
                 globalGui,
                 title,
-                message,
+                wrappedMessage,
                 MessageDialogButton.OK
         );
     }
-   public static class MemoryTracker {
+
+    public static String wrapText(String text, int maxWidth) {
+        StringBuilder wrapped = new StringBuilder();
+        int lineLen = 0;
+        for (String word : text.split(" ")) {
+            if (lineLen + word.length() > maxWidth) {
+                wrapped.append("\n");
+                lineLen = 0;
+            }
+            wrapped.append(word).append(" ");
+            lineLen += word.length() + 1;
+        }
+        return wrapped.toString();
+    }
+
+
+    public static class MemoryTracker {
         private static boolean memTracking = false;
         public static void startMemoryTracker(Label memoryLabel) {
             memTracking = true;

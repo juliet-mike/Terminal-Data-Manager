@@ -51,6 +51,9 @@ public class quickOps {
         public String getName() {
             return name;
         }
+
+
+
         @Override
         public String toString() {
             return number + ": " + name;
@@ -241,7 +244,7 @@ public class quickOps {
 
         Button submitButton = new Button("Submit", () -> {
             try {
-                setTDMTableModel(DataOps.CustomGetTableModelFromSQL(textBox.getText()));
+                setTDMTableModel(dataOps.CustomGetTableModelFromSQL(textBox.getText()));
             } catch (SQLException e) {
                 showErrorDialog("SQL Error", e.getMessage());
             }

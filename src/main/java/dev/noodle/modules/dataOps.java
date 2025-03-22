@@ -28,6 +28,7 @@ import com.googlecode.lanterna.gui2.table.Table;
 import com.googlecode.lanterna.gui2.table.TableModel;
 import com.opencsv.CSVReader;
 import com.opencsv.exceptions.CsvValidationException;
+import dev.noodle.remoteSQL.remoteSQL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,26 +36,28 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.sql.*;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.Objects;
 
 import static dev.noodle.TDM.*;
 
 
-public class DataOps {
-    private static final Logger log = LoggerFactory.getLogger(DataOps.class);
+public class dataOps {
+    private static final Logger log = LoggerFactory.getLogger(dataOps.class);
 
     public static String getJarDir() {
-        String path = DataOps.class.getProtectionDomain().getCodeSource().getLocation().getPath();
+        String path = dataOps.class.getProtectionDomain().getCodeSource().getLocation().getPath();
         String decodedPath;
         try {
             decodedPath = URLDecoder.decode(path, "UTF-8");
-        } catch (java.io.UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException e) {
             return "";
         }
         File file = new File(decodedPath);
@@ -71,8 +74,7 @@ public class DataOps {
         Statement stmt = conn.createStatement();
         stmt.execute("DROP TABLE IF EXISTS [" + FILENAME + "]");
 
-
-        if (Objects.equals(table.getTableModel().getColumnLabel(0), "ID")){
+        if (Objects.equals(table.getTableModel().getColumnLabel(0).toUpperCase(), "ID")){
         System.out.println("YOU HAVE ID IN THE #1 header");
         table.getTableModel().removeColumn(0);
         }
@@ -80,7 +82,7 @@ public class DataOps {
         sb.append("CREATE TABLE IF NOT EXISTS [")
                 .append(FILENAME)
                 .append("] (")
-                .append("id INTEGER PRIMARY KEY AUTOINCREMENT, ");
+                .append("TDM_ROW_ID INTEGER PRIMARY KEY AUTOINCREMENT, ");
 
         int columnCount = table.getTableModel().getColumnCount();
         int rowCount = table.getTableModel().getRowCount();
@@ -125,6 +127,66 @@ public class DataOps {
         conn.close();
     }
 
+    public static void createRecentQueryTable()  {
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(getDatabaseURL());
+        } catch (SQLException e) {
+            showErrorDialog("SQL TDM INTERNAL TABLE ERROR", ("unable to reach internal sqlite db" + e.getMessage()));
+        }
+        String createTableSQL = """
+        CREATE TABLE IF NOT EXISTS RecentQueries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query TEXT NOT NULL,
+        url TEXT,
+        dbname TEXT,
+        env TEXT,
+        username TEXT
+        )
+        """;
+
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(createTableSQL);
+        }
+        catch (SQLException e) {
+            showErrorDialog("SQL TDM CREATE INTERNAL TABLE ERROR", ("unable to create internal table for recent queries" + e.getMessage()));
+        }
+    }
+    public static void insertValuesRecentQueryTable(String query, String url, String dbname, String env, String username) throws SQLException {
+        Connection conn = null;
+        try {
+            conn = DriverManager.getConnection(getDatabaseURL());
+        }catch (SQLException e) {
+            showErrorDialog("Connection Error", ("unable to connect to internal db" + e.getMessage()));
+        }
+        String createTableSQL = """
+        CREATE TABLE IF NOT EXISTS RecentQueries (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        query TEXT NOT NULL,
+        url TEXT,
+        dbname TEXT,
+        env TEXT,
+        username TEXT
+        )
+        """;
+
+        try (Statement stmt = conn.createStatement()) {
+            stmt.execute(createTableSQL);
+        }
+
+        String insertSQL = "INSERT INTO RecentQueries (query, url, dbname, env, username) VALUES (?, ?, ?, ?, ?)";
+        try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
+            pstmt.setString(1, query);
+            pstmt.setString(2, url);
+            pstmt.setString(3, dbname);
+            pstmt.setString(4, env);
+            pstmt.setString(5, username);
+            pstmt.executeUpdate();
+            conn.close();
+        } catch (SQLException e) {
+            showErrorDialog("SQL error: could not insert", e.getMessage());
+        }
+    }
 
     public static void appendFileToList(String FILENAME, String FILEPATH) throws SQLException {
         Connection conn = DriverManager.getConnection(getDatabaseURL());
@@ -139,17 +201,13 @@ public class DataOps {
         try (Statement stmt = conn.createStatement()) {
             stmt.executeUpdate(createTableSQL);
         }
-
         String insertSQL = "INSERT OR IGNORE INTO FileList (FILENAME ,FILEPATH) VALUES (?, ?)";
         try (PreparedStatement pstmt = conn.prepareStatement(insertSQL)) {
             pstmt.setString(1, FILENAME);
             pstmt.setString(2, FILEPATH);
             pstmt.executeUpdate();
         } catch (SQLException e) {
-            //todo add error message support for methods in this class
-
-
-            System.out.println("SQL error: " + e.getMessage());
+            showErrorDialog("SQL Insert error for" + FILENAME, e.getMessage());
         }
         conn.close();
     }
@@ -303,44 +361,73 @@ public class DataOps {
     }
 
 
+    public static RadioBoxList<remoteSQL.OptionofRecent> recentTableEntriesListFromInternal(String selectCol, String tableName, int recentResultsToShow) {
+//        TerminalSize size = new TerminalSize(70, recentResultsToShow);
+//        RadioBoxList<remoteSQL.OptionofRecent> selectionBox1 = new RadioBoxList<remoteSQL.OptionofRecent>(size);
 
+        RadioBoxList<remoteSQL.OptionofRecent> selectionBox1 = new RadioBoxList<>();
+        selectionBox1.setLayoutData(LinearLayout.createLayoutData(LinearLayout.Alignment.Fill));
 
-    public static void opnRecentFileFromInternal() {
-        BasicWindow dialogWindow = new BasicWindow("open recent file");
-        Panel recentPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-        int limitRecentCount = 10;
-        TerminalSize size = new TerminalSize(50, limitRecentCount);
+        if (!Objects.equals(selectCol, "*")) {
+            // absolutely will not work if you input * outside the method????????
+            try (Connection conn = DriverManager.getConnection(getDatabaseURL());
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT " + selectCol + " FROM "+ tableName + " ORDER BY ID LIMIT " + recentResultsToShow)) {
+                 String[] values = new String[rs.getMetaData().getColumnCount()];
+                 int index = 1;
+                 while (rs.next()) {
+                     for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+                         values[i - 1] = rs.getString(i);
+                     }
+                     selectionBox1.addItem((new remoteSQL.OptionofRecent(index, rs.getString(selectCol), values)));
+                     index++;
+                 }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+                showErrorDialog("SQL error", e.getMessage());
+
+            }
+        }else {
+            try (Connection conn = DriverManager.getConnection(getDatabaseURL());
+                 Statement stmt = conn.createStatement();
+                 ResultSet rs = stmt.executeQuery("SELECT * FROM " + tableName + " ORDER BY ID LIMIT " + recentResultsToShow)) {
+                String[] values = new String[rs.getMetaData().getColumnCount()];
+                //int column = 1;
+                int index = 1;
+                while (rs.next()) {
+                    for (int i = 1; i <= rs.getMetaData().getColumnCount(); i++) {
+                        values[i - 1] = rs.getString(i);
+                    }
+                    selectionBox1.addItem((new remoteSQL.OptionofRecent(index, rs.getString(selectCol), values)));
+                    index++;
+                }
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+                showErrorDialog("SQL error", e.getMessage());
+            }
+        }
+        return selectionBox1;
+    }
+
+    public static RadioBoxList<quickOps.Option> recentTableEntriesListFromInternalasQuickOption (String selectCol, String tableName, int recentResultsToShow) {
+        TerminalSize size = new TerminalSize(50, recentResultsToShow);
         RadioBoxList<quickOps.Option> selectionBox1 = new RadioBoxList<quickOps.Option>(size);
         try (Connection conn = DriverManager.getConnection(getDatabaseURL());
              Statement stmt = conn.createStatement();
-             ResultSet rs = stmt.executeQuery("SELECT FILENAME FROM [FileList] ORDER BY ID LIMIT " + limitRecentCount )) {
-            //ResultSetMetaData metaData = rs.getMetaData();
-            recentPanel.addComponent(selectionBox1);
-            int column = 1; int index = 1;
+             ResultSet rs = stmt.executeQuery("SELECT " + selectCol + " FROM "+ tableName + " ORDER BY ID LIMIT " + recentResultsToShow)) {
+
+           //int column = 1;
+            int index = 1;
             while (rs.next()) {
-                selectionBox1.addItem((new quickOps.Option(index, rs.getString(column))));
+                selectionBox1.addItem((new quickOps.Option(index, rs.getString(selectCol))));
                 index++;
             }
-            recentPanel.addComponent(new Button("Submit", () -> {
-                quickOps.Option selectedOption1 = selectionBox1.getCheckedItem();
-                if (selectedOption1 != null) {
-                    String selectedFileName = selectedOption1.getName();
-                    try {
-                        setTableModelFromInternalDB(selectedFileName);
-                    } catch (SQLException e) {
-                        showErrorDialog("SQL error", e.getMessage());
-                    }
-                    dialogWindow.close();
-                }
-            }));
-            Button exitButton = new Button("Exit", dialogWindow::close);
-            recentPanel.addComponent(exitButton);
-            dialogWindow.setComponent(recentPanel);
-            globalGui.addWindowAndWait(dialogWindow);
 
         } catch (SQLException e) {
+            System.out.println(e.getMessage());
             showErrorDialog("SQL error", e.getMessage());
         }
+        return selectionBox1;
     }
 
 

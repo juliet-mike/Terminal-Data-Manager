@@ -25,6 +25,8 @@ import static dev.noodle.modules.quickOps.removeColumn;
 import static dev.noodle.TDM.globalDataframeActionListBox;
 
 public class dataframeActionList {
+
+    // moved to take all these repetitive lines out of TDM.java
     public static void initActionListBox() {
 
 //            dataframeActionListBox.addItem("Quick CAL", new Runnable() {
@@ -106,12 +108,6 @@ public class dataframeActionList {
                 mergeColumn();
             }
         });
-//            dataframeActionListBox.addItem("Merge Table", new Runnable() {
-//                @Override
-//                public void run() {
-//                   // may be best left to the custom sql query
-//                }
-//            });
         globalDataframeActionListBox.addItem("Split Column", new Runnable() {
             @Override
             public void run() {

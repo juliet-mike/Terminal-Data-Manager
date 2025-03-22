@@ -27,21 +27,27 @@ import com.googlecode.lanterna.graphics.Theme;
 import com.googlecode.lanterna.gui2.*;
 import com.googlecode.lanterna.screen.Screen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
-import dev.noodle.modules.DataOps;
+import dev.noodle.modules.dataOps;
+import dev.noodle.modules.quickOps;
 
 
 import java.io.IOException;
 import java.sql.Connection;
+import java.sql.Driver;
 import java.sql.DriverManager;
 import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Enumeration;
 import java.util.List;
 
+
+
 import static dev.noodle.TDM.*;
-import static dev.noodle.modules.DataOps.CustomGetTableModelFromSQL;
+import static dev.noodle.modules.dataOps.*;
 
 public class remoteSQL {
 
-    public static void main (String[] args) {
+    public static void main (String[] args) throws ClassNotFoundException, SQLException {
         //use for testing new UI layout only
 
         DefaultTerminalFactory terminalFactory = new DefaultTerminalFactory();
@@ -62,26 +68,40 @@ public class remoteSQL {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+        Class.forName("org.postgresql.Driver"); // for PostgreSQL
+        Class.forName("com.microsoft.sqlserver.jdbc.SQLServerDriver"); // for SQL Server
+
+        Enumeration<Driver> drivers = DriverManager.getDrivers();
+        while (drivers.hasMoreElements()) {
+            System.out.println("Available JDBC driver: " + drivers.nextElement().getClass().getName());
+        }
+        String url2 = "jdbc:sqlserver://192.168.1.151:1433;databaseName=master;encrypt=true;trustServerCertificate=true";
+        Connection conn2 = DriverManager.getConnection(url2, "sa", "Wingnut16921$$");
+        System.out.println(conn2);
 
         importRemote();
     }
 
 
-    public static void importRemote(){
+    public static void importRemote() {
+        createRecentQueryTable();
         BasicWindow dialogWindow = new BasicWindow("Import Remote SQL Data");
         Panel framePanel = new Panel(new LinearLayout(Direction.HORIZONTAL));
         Panel Lpanel = new Panel(new LinearLayout(Direction.VERTICAL));
         Panel Rpanel = new Panel(new LinearLayout(Direction.VERTICAL));
         dialogWindow.setComponent(framePanel);
         framePanel.addComponent(Lpanel);
+        framePanel.addComponent(Lpanel.withBorder(Borders.singleLine("Query panel")));
+        Lpanel.setLayoutData(LinearLayout.createLayoutData(LinearLayout.Alignment.Fill, LinearLayout.GrowPolicy.CanGrow));
+
         framePanel.addComponent(Rpanel);
+        framePanel.addComponent(Rpanel.withBorder(Borders.singleLine("Control Panel")));
+        Rpanel.setLayoutData(LinearLayout.createLayoutData(LinearLayout.Alignment.Fill, LinearLayout.GrowPolicy.CanGrow));
+
         dialogWindow.setHints(List.of(Window.Hint.FULL_SCREEN, Window.Hint.CENTERED));
         dialogWindow.setComponent(framePanel);
 
-        framePanel.addComponent(Lpanel.withBorder(Borders.singleLine("Query panel"))); // Optional border for visualization
-        framePanel.addComponent(Rpanel.withBorder(Borders.singleLine("Control Panel"))); // Optional border
-
-        Label warnlabel = new Label("Warning: \n Importing too much data \n may exceed your RAM");
+        Label warnlabel = new Label("Warning: \n Importing too much data may exceed your RAM");
         Rpanel.addComponent(warnlabel);
 
         TextBox queryBox = new TextBox("", TextBox.Style.MULTI_LINE)
@@ -98,9 +118,28 @@ public class remoteSQL {
                 .setLayoutData(LinearLayout.createLayoutData(LinearLayout.Alignment.Fill))
                 .setPreferredSize(new TerminalSize(30, 2))
                 .setVerticalFocusSwitching(true);
-        String url = urlBox.getText();
 
         Rpanel.addComponent(urlBox);
+
+        Label dbLabel = new Label("Database Name:");
+        Rpanel.addComponent(dbLabel);
+
+        TextBox dbBox = new TextBox("", TextBox.Style.MULTI_LINE)
+                .setLayoutData(LinearLayout.createLayoutData(LinearLayout.Alignment.Fill))
+                .setPreferredSize(new TerminalSize(30, 2))
+                .setVerticalFocusSwitching(true);
+
+        Rpanel.addComponent(dbBox);
+
+        Label envLabel = new Label("Other ENV variables: (must follow proper syntax!!): ");
+        Rpanel.addComponent(envLabel);
+
+        TextBox envBox = new TextBox(";encrypt=true;trustServerCertificate=true", TextBox.Style.MULTI_LINE)
+                .setLayoutData(LinearLayout.createLayoutData(LinearLayout.Alignment.Fill))
+                .setPreferredSize(new TerminalSize(30, 2))
+                .setVerticalFocusSwitching(true);
+
+        Rpanel.addComponent(envBox);
 
         Label usernameLabel = new Label("Username:");
         Rpanel.addComponent(usernameLabel);
@@ -109,7 +148,6 @@ public class remoteSQL {
                 .setLayoutData(LinearLayout.createLayoutData(LinearLayout.Alignment.Fill))
                 .setPreferredSize(new TerminalSize(30, 2))
                 .setVerticalFocusSwitching(true);
-        String username = usernameBox.getText();
 
         Rpanel.addComponent(usernameBox);
 
@@ -120,36 +158,44 @@ public class remoteSQL {
                 .setLayoutData(LinearLayout.createLayoutData(LinearLayout.Alignment.Fill))
                 .setPreferredSize(new TerminalSize(30, 2))
                 .setVerticalFocusSwitching(true);
-        String password = passwordBox.getText();
 
         Rpanel.addComponent(passwordBox);
 
         Panel buttonPanel = new Panel(new LinearLayout(Direction.HORIZONTAL));
 
         Button submitButton = new Button("Submit", () -> {
+
             String query = queryBox.getText();
             Connection conn = null;
             try {
-                 conn = DriverManager.getConnection(url, username, password);
-                 setSelectedFilePaths(url);
-                 setSelectedFileNames(url);
+                StringBuilder builtURL = new StringBuilder();
+                builtURL.append("jdbc:"+ urlBox.getText()+";databaseName="+envBox.getText());
+
+                insertValuesRecentQueryTable(queryBox.getText(), ("jdbc:"+ urlBox.getText()),
+                        dbBox.getText(), envBox.getText(), usernameBox.getText());
+
+                if (!(envBox.getText().isEmpty())) {
+                    builtURL.append(envBox.getText());
+                }
+
+                String username = usernameBox.getText();
+                String password = passwordBox.getText();
+
+                conn = DriverManager.getConnection(builtURL.toString(), username, password);
+                 setSelectedFilePaths(envBox.getText());
+                 setSelectedFileNames(envBox.getText());
                  if (conn != null) {
                      setTDMTableModel(CustomGetTableModelFromSQL(query, conn));
-                     DataOps.TableToInternalSQL(getSelectedFileNames().toString(), getTDMTable());
+                     dataOps.TableToInternalSQL(getSelectedFileNames().toString(), getTDMTable());
                  }
                  else {
                      // not sure if this will actually prevent a crash or not better safe than sorry
                      showErrorDialog("Conn Error", "Could not connect to the database");
                  }
-
             }
             catch (SQLException e) {
-                showErrorDialog("SQL Error", "SQL Error: " + e.getMessage());
-            }
-            finally {
-                if (conn != null) {
-                    dialogWindow.close();
-                }
+                //System.err.println(e);
+                showErrorDialog("SQL MESSAGE", "SQL msg: " + e.getMessage());
             }
 
         });
@@ -158,15 +204,74 @@ public class remoteSQL {
         Button exitButton = new Button("Exit", dialogWindow::close);
         buttonPanel.addComponent(exitButton);
 
+        Button recentButton = new Button("fill recent", () -> {
+            BasicWindow recentDialogWindow = new BasicWindow("open recent file");
+            RadioBoxList<OptionofRecent> selectionBox1 = recentTableEntriesListFromInternal("*",
+                    "RecentQueries",
+                    10);
+            Panel recentPanel = new Panel(new LinearLayout(Direction.VERTICAL));
+            recentPanel.addComponent(selectionBox1);
+
+            recentPanel.addComponent(new Button("Submit", () -> {
+                OptionofRecent selectedOption1 = selectionBox1.getCheckedItem();
+                if (selectedOption1 != null) {
+                    String values[] = selectedOption1.getValues();
+
+                    queryBox.setText(values[1]);
+                    urlBox.setText(values[2]);
+                    dbBox.setText(values[3]);
+                    envBox.setText(values[4]);
+                    usernameBox.setText(values[5]);
+
+                    recentDialogWindow.close();
+                }
+            }));
+            Button recentexitButton = new Button("Exit", recentDialogWindow::close);
+            recentPanel.addComponent(recentexitButton);
+            recentDialogWindow.setComponent(recentPanel);
+            globalGui.addWindowAndWait(recentDialogWindow);
+
+        });
+        buttonPanel.addComponent(recentButton);
 
         Rpanel.addComponent(buttonPanel);
 
         globalGui.addWindowAndWait(dialogWindow);
     }
 
-    public static void exportToRemote() {
-        // TODO add this but refactor import remote first
-    }
+//    public static void exportToRemote() {
+//        // TODO
+//
+//    }
+//
 
+    public static class OptionofRecent {
+        private final int number;
+        private final String name;
+        private final String[] values;
+
+        public OptionofRecent(int number, String name, String[] values) {
+            this.number = number;
+            this.name = name;
+            this.values = values;
+        }
+
+        public int getNumber() {
+            return number;
+        }
+        public String getName() {
+            return name;
+        }
+        public String[] getValues() {
+            return values;
+        }
+
+
+
+        @Override
+        public String toString() {
+            return number + ": " + name + "  " +Arrays.toString(values);
+        }
+    }
 
 }
