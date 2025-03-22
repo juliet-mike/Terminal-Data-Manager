@@ -40,6 +40,8 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.List;
 
+import org.slf4j.*;
+
 
 
 import static dev.noodle.TDM.*;
@@ -84,6 +86,7 @@ public class remoteSQL {
 
 
     public static void importRemote() {
+        System.setProperty("org.slf4j.simpleLogger.defaultLogLevel", "off");
         createRecentQueryTable();
         BasicWindow dialogWindow = new BasicWindow("Import Remote SQL Data");
         Panel framePanel = new Panel(new LinearLayout(Direction.HORIZONTAL));
@@ -169,7 +172,10 @@ public class remoteSQL {
             Connection conn = null;
             try {
                 StringBuilder builtURL = new StringBuilder();
-                builtURL.append("jdbc:"+ urlBox.getText()+";databaseName="+envBox.getText());
+                builtURL.append("jdbc:")
+                        .append(urlBox.getText())
+                        .append(";databaseName=")
+                        .append(dbBox.getText());
 
                 insertValuesRecentQueryTable(queryBox.getText(), ("jdbc:"+ urlBox.getText()),
                         dbBox.getText(), envBox.getText(), usernameBox.getText());
@@ -194,10 +200,8 @@ public class remoteSQL {
                  }
             }
             catch (SQLException e) {
-                //System.err.println(e);
                 showErrorDialog("SQL MESSAGE", "SQL msg: " + e.getMessage());
             }
-
         });
         buttonPanel.addComponent(submitButton);
 
@@ -205,35 +209,38 @@ public class remoteSQL {
         buttonPanel.addComponent(exitButton);
 
         Button recentButton = new Button("fill recent", () -> {
-            BasicWindow recentDialogWindow = new BasicWindow("open recent file");
+            BasicWindow recentDialogWindow = new BasicWindow("open recent query");
             RadioBoxList<OptionofRecent> selectionBox1 = recentTableEntriesListFromInternal("*",
                     "RecentQueries",
                     10);
             Panel recentPanel = new Panel(new LinearLayout(Direction.VERTICAL));
-            recentPanel.addComponent(selectionBox1);
 
-            recentPanel.addComponent(new Button("Submit", () -> {
-                OptionofRecent selectedOption1 = selectionBox1.getCheckedItem();
-                if (selectedOption1 != null) {
-                    String values[] = selectedOption1.getValues();
+            if (!(selectionBox1.isEmpty())) {
+                recentPanel.addComponent(selectionBox1);
+                recentPanel.addComponent(new Button("Submit", () -> {
+                    OptionofRecent selectedOption1 = selectionBox1.getCheckedItem();
+                    if (selectedOption1 != null) {
+                        String[] values = selectedOption1.getValues();
 
-                    queryBox.setText(values[1]);
-                    urlBox.setText(values[2]);
-                    dbBox.setText(values[3]);
-                    envBox.setText(values[4]);
-                    usernameBox.setText(values[5]);
+                        queryBox.setText(values[1]);
+                        urlBox.setText(values[2]);
+                        dbBox.setText(values[3]);
+                        envBox.setText(values[4]);
+                        usernameBox.setText(values[5]);
 
-                    recentDialogWindow.close();
-                }
-            }));
-            Button recentexitButton = new Button("Exit", recentDialogWindow::close);
-            recentPanel.addComponent(recentexitButton);
-            recentDialogWindow.setComponent(recentPanel);
-            globalGui.addWindowAndWait(recentDialogWindow);
-
+                        recentDialogWindow.close();
+                    }
+                }));
+                Button recentexitButton = new Button("Exit", recentDialogWindow::close);
+                recentPanel.addComponent(recentexitButton);
+                recentDialogWindow.setComponent(recentPanel);
+                globalGui.addWindowAndWait(recentDialogWindow);
+            } else {
+                dialogWindow.close();
+                showErrorDialog("No recent queries found", "No recent query found for this user");
+            }
         });
         buttonPanel.addComponent(recentButton);
-
         Rpanel.addComponent(buttonPanel);
 
         globalGui.addWindowAndWait(dialogWindow);
@@ -265,8 +272,6 @@ public class remoteSQL {
         public String[] getValues() {
             return values;
         }
-
-
 
         @Override
         public String toString() {

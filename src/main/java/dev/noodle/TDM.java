@@ -128,8 +128,8 @@ public class TDM {
             topSubPanel.setTheme(theme);
 
             MenuBar menubar = new MenuBar();
-            Theme theme2 = LanternaThemes.getRegisteredTheme("default");
-            menubar.setTheme(theme2);
+            Theme menubartheme = LanternaThemes.getRegisteredTheme("default");
+            menubar.setTheme(menubartheme);
             globalMenuBar = menubar;
             topSubPanel.addComponent(menubar);
 

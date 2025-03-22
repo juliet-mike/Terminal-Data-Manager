@@ -50,7 +50,6 @@ import static dev.noodle.TDM.*;
 
 
 public class dataOps {
-    private static final Logger log = LoggerFactory.getLogger(dataOps.class);
 
     public static String getJarDir() {
         String path = dataOps.class.getProtectionDomain().getCodeSource().getLocation().getPath();
